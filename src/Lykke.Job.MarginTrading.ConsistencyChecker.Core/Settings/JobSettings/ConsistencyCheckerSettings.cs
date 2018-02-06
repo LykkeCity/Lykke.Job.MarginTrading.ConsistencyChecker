@@ -1,6 +1,6 @@
 ﻿namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings
 {
-        public class MarginTrading.ConsistencyCheckerSettings
+        public class ConsistencyCheckerSettings
         {
             public DbSettings Db { get; set; }
         }

@@ -12,13 +12,13 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
 {
     public class JobModule : Module
     {
-        private readonly MarginTrading.ConsistencyCheckerSettings _settings;
+        private readonly ConsistencyCheckerSettings _settings;
         private readonly IReloadingManager<DbSettings> _dbSettingsManager;
         private readonly ILog _log;
         // NOTE: you can remove it if you don't need to use IServiceCollection extensions to register service specific dependencies
         private readonly IServiceCollection _services;
 
-        public JobModule(MarginTrading.ConsistencyCheckerSettings settings, IReloadingManager<DbSettings> dbSettingsManager, ILog log)
+        public JobModule(ConsistencyCheckerSettings settings, IReloadingManager<DbSettings> dbSettingsManager, ILog log)
         {
             _settings = settings;
             _log = log;

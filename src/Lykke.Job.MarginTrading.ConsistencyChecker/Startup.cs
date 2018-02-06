@@ -60,7 +60,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
                 Log = CreateLogWithSlack(services, appSettings);
 
-                builder.RegisterModule(new JobModule(appSettings.CurrentValue.MarginTrading.ConsistencyCheckerJob, appSettings.Nested(x => x.MarginTrading.ConsistencyCheckerJob.Db), Log));
+                builder.RegisterModule(new JobModule(appSettings.CurrentValue.ConsistencyCheckerJob, appSettings.Nested(x => x.ConsistencyCheckerJob.Db), Log));
 
                 builder.Populate(services);
 
@@ -175,7 +175,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
             aggregateLogger.AddLog(consoleLogger);
 
-            var dbLogConnectionStringManager = settings.Nested(x => x.MarginTrading.ConsistencyCheckerJob.Db.LogsConnString);
+            var dbLogConnectionStringManager = settings.Nested(x => x.ConsistencyCheckerJob.Db.LogsConnString);
             var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
             if (string.IsNullOrEmpty(dbLogConnectionString))
