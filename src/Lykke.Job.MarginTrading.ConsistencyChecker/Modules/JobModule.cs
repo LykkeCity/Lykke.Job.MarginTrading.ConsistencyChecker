@@ -35,9 +35,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
             //  .As<IQuotesPublisher>()
             //  .WithParameter(TypedParameter.From(_settings.Rabbit.ConnectionString))
 
-            builder.RegisterInstance(_log)
-                .As<ILog>()
-                .SingleInstance();
 
             builder.RegisterType<HealthService>()
                 .As<IHealthService>()
@@ -50,7 +47,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
                 .As<IShutdownManager>();
             RegisterPeriodicalHandlers(builder);
 
-            // TODO: Add your dependencies here
+            builder.RegisterType<ConsistencyService>()
+                .As<IConsistencyService>();
 
             builder.Populate(_services);
         }

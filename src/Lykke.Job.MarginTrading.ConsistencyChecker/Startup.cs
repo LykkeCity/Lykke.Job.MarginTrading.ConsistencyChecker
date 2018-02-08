@@ -8,6 +8,7 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Modules;
 using Lykke.Logs;
@@ -60,8 +61,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
                 Log = CreateLogWithSlack(services, appSettings);
 
-                builder.RegisterModule(new JobModule(appSettings.CurrentValue.ConsistencyCheckerJob, appSettings.Nested(x => x.ConsistencyCheckerJob.Db), Log));
-
+                RegisterModules(builder, appSettings.Nested(m => m.ConsistencyCheckerJob), Log);
+                
                 builder.Populate(services);
 
                 ApplicationContainer = builder.Build();
@@ -73,6 +74,12 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
                 Log?.WriteFatalErrorAsync(nameof(Startup), nameof(ConfigureServices), "", ex).GetAwaiter().GetResult();
                 throw;
             }
+        }
+
+        private void RegisterModules(ContainerBuilder builder, IReloadingManager<ConsistencyCheckerSettings> settings, ILog log)
+        {
+            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.Db), Log));
+            builder.RegisterModule(new JobModule(settings.CurrentValue, settings.Nested(x => x.Db), Log));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
@@ -188,7 +195,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
                 throw new InvalidOperationException($"LogsConnString {dbLogConnectionString} is not filled in settings");
 
             var persistenceManager = new LykkeLogToAzureStoragePersistenceManager(
-                AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "MarginTrading.ConsistencyCheckerLog", consoleLogger),
+                AzureTableStorage<LogEntity>.Create(dbLogConnectionStringManager, "ConsistencyCheckerLog", consoleLogger),
                 consoleLogger);
 
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log

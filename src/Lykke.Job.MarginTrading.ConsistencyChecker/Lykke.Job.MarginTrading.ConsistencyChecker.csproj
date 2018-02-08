@@ -59,5 +59,6 @@
     <ProjectReference Include="..\Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories\Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories.csproj" />
     <ProjectReference Include="..\Lykke.Job.MarginTrading.ConsistencyChecker.Core\Lykke.Job.MarginTrading.ConsistencyChecker.Core.csproj" />
     <ProjectReference Include="..\Lykke.Job.MarginTrading.ConsistencyChecker.Services\Lykke.Job.MarginTrading.ConsistencyChecker.Services.csproj" />
+    <ProjectReference Include="..\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories.csproj" />
   </ItemGroup>
 </Project>
