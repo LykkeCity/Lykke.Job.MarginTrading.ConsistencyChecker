@@ -17,9 +17,9 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories
     {
         private readonly INoSQLTableStorage<AccountMarginEventReportEntity> _tableStorage;
 
-        public AccountMarginEventReportRepository(IReloadingManager<DbSettings> settings, ILog log)
+        public AccountMarginEventReportRepository(IReloadingManager<string> connectionString, ILog log)
         {
-            _tableStorage = AzureTableStorage<AccountMarginEventReportEntity>.Create(settings.Nested(s => s.ReportsConnString),
+            _tableStorage = AzureTableStorage<AccountMarginEventReportEntity>.Create(connectionString,
                 "AccountMarginEventsReports", log);
         }
 

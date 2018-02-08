@@ -1,10 +1,8 @@
-﻿using Common;
-using Common.Log;
+﻿using Common.Log;
 using Dapper;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -16,13 +14,13 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
     {
         private const string TableName = "AccountMarginEventsReports";
         
-        private readonly DbSettings _settings;
+        private readonly string _connectionString;
         private readonly ILog _log;
 
-        public AccountMarginEventReportRepository(DbSettings settings, ILog log)
+        public AccountMarginEventReportRepository(string connectionString, ILog log)
         {
             _log = log;
-            _settings = settings;         
+            _connectionString = connectionString;
         }
 
         public async Task<IEnumerable<IAccountMarginEventReport>> GetAsync(string[] accountIds, DateTime? dtFrom, DateTime? dtTo)
@@ -36,7 +34,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
                     $" WHERE Id in({string.Join(",", accountIds)}) " +
                     $" AND (EventTime >= '{from}' AND EventTime<='{to}')";
 
-            using (var conn = new SqlConnection(_settings.ReportsSqlConnString))
+            using (var conn = new SqlConnection(_connectionString))
             {
                 try { return await conn.QueryAsync<AccountMarginEventReport>(query); }
                 catch (Exception ex)
