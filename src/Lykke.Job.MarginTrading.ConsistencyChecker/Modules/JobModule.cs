@@ -47,7 +47,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
                 .As<IShutdownManager>();
             RegisterPeriodicalHandlers(builder);
 
-            // TODO: Add your dependencies here
+            builder.RegisterType<ConsistencyService>()
+                .As<IConsistencyService>();
 
             builder.Populate(_services);
         }

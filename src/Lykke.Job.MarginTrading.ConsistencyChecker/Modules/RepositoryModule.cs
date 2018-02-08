@@ -28,8 +28,13 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
 
             builder.RegisterInstance(new RepositoryManager(
                 new AzureRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
-                new SqlRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsConnString).CurrentValue, _log)
-                ))
+                new SqlRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new AzureRepositories.AccountsReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
+                new SqlRepositories.AccountsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new AzureRepositories.AccountsStatReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
+                new SqlRepositories.AccountsStatReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new AzureRepositories.AccountTransactionsReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
+                new SqlRepositories.AccountTransactionsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log)))
                 .As<IRepositoryManager>()
                 .SingleInstance();
         }

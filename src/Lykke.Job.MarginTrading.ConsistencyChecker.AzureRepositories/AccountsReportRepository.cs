@@ -4,7 +4,6 @@ using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories.Entities;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
 using Lykke.SettingsReader;
 using System;
 using System.Collections.Generic;
@@ -17,9 +16,9 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories
     {
         private readonly INoSQLTableStorage<AccountsReportEntity> _tableStorage;
 
-        public AccountsReportRepository(IReloadingManager<DbSettings> settings, ILog log)
+        public AccountsReportRepository(IReloadingManager<string> connectionString, ILog log)
         {
-            _tableStorage = AzureTableStorage<AccountsReportEntity>.Create(settings.Nested(s => s.ReportsConnString),
+            _tableStorage = AzureTableStorage<AccountsReportEntity>.Create(connectionString,
                 "ClientAccountsReports", log);
         }
         

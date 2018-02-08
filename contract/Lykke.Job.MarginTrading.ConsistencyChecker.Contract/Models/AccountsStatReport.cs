@@ -23,5 +23,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models
         public double OpenPositionsCount { get; set; }
         public double MarginUsageLevel { get; set; }
         public bool IsLive { get; set; }
+
+        public override string ToString()
+        {
+            return $"[{BaseAssetId}] {AccountId}";
+        }
     }
 }
