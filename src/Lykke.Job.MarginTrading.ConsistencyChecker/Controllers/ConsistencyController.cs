@@ -23,17 +23,53 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
         }
 
         /// <summary>
-        /// Checks service is alive
+        /// Performs a Balance and transaction amount consistency Check
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("checkbalanceandtransactionamount")]
+        [Route("CheckBalanceAndTransactionAmount")]
         [SwaggerOperation("CheckBalanceAndTransactionAmount/{dateFrom}/{dateTo}")]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(List<BalanceAndTransactionAmountCheckResult>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CheckBalanceAndTransactionAmount(DateTime? dateFrom, DateTime? dateTo)
         {
-            var res = await _consistencyService.CheckBalanceAndTransactionAmount(false, dateFrom, dateTo);
+            var res = await _consistencyService.CheckBalanceAndTransactionAmount(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
+
+        /// <summary>
+        /// Performs a Balance Transaction and OrderClosed consistency check
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckBalanceAndOrderClosed")]
+        [SwaggerOperation("CheckBalanceAndOrderClosed/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<BalanceAndOrderClosedCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckBalanceAndOrderClosed(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckBalanceAndOrderClosed(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
+
+        /// <summary>
+        /// Performs OrdersReport to TradePositionReportClosed & TradePositionReportOpened consistency check
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckOrdersReportAndOrderClosedOpened")]
+        [SwaggerOperation("CheckOrdersReportAndOrderClosedOpened/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<OrdersReportAndOrderClosedOpenedCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckOrdersReportAndOrderClosedOpened(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckOrdersReportAndOrderClosedOpened(true, dateFrom, dateTo);
             if (res.Count() == 0)
                 return Ok("OK");
             else

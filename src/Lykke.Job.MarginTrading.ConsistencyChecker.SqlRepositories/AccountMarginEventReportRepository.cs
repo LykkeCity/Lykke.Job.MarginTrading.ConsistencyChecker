@@ -36,12 +36,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try { return await conn.QueryAsync<AccountMarginEventReport>(query); }
-                catch (Exception ex)
-                {
-                    await _log?.WriteErrorAsync("AccountMarginEventReportRepository", "GetAsync", ex);
-                    throw;
-                }
+                return await conn.QueryAsync<AccountMarginEventReport>(query);
             }
         }
     }

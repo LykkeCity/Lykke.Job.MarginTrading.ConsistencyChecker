@@ -32,11 +32,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try { return await conn.QueryAsync<AccountsStatReport>(query,new { from = dtFrom ?? new DateTime(2000,01,01), to = dtTo ?? DateTime.MaxValue }); }
-                catch (Exception ex)
-                {                    
-                    throw ex;
-                }
+                return await conn.QueryAsync<AccountsStatReport>(query,new { from = dtFrom ?? new DateTime(2000,01,01), to = dtTo ?? DateTime.MaxValue }); 
             }
         }
     }
