@@ -75,5 +75,23 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
             else
                 return Ok(res);
         }
+
+        /// <summary>
+        /// Performs an OpenPrice & ClosePrice consistency check with Price Candles data 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckCandlesPriceConsistency")]
+        [SwaggerOperation("CheckCandlesPriceConsistency/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<OrdersReportAndOrderClosedOpenedCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckCandlesPriceConsistency(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckCandlesPriceConsistency(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
     }
 }

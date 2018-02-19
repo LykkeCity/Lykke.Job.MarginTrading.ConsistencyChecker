@@ -3,6 +3,7 @@ using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,15 +15,17 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
     {
         private readonly IRepositoryManager _repositoryManager;
         private readonly ILog _log;
+        private readonly IPriceCandlesService _priceCandlesService;
 
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="repositoryManager">IRepositoryManager object</param>
         /// <param name="log">ILog object</param>
-        public ConsistencyService(IRepositoryManager repositoryManager, ILog log)
+        public ConsistencyService(IRepositoryManager repositoryManager,IPriceCandlesService priceCandlesService, ILog log)
         {
             _repositoryManager = repositoryManager;
+            _priceCandlesService = priceCandlesService;
             _log = log;
         }
 
@@ -150,7 +153,34 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
+        public async Task<IEnumerable<IPriceCandlesConsistencyResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
+        {
+            var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
+
+            var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to)).ToList();
+            allTradingPosition.AddRange((await tradingPositionRepo.GetClosedAsync(from, to)));
+
+            var assets = allTradingPosition.Select(x => x.CoreSymbol).Distinct();            
+            var minDate = allTradingPosition.Min(x => x.OpenDate).Value;
+            var maxDate = allTradingPosition.Max(x => x.CloseDate).Value;
+
+            var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
+            var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
+            foreach (var asset in assets)
+            {                
+                var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, minDate, maxDate);
+                bidCandles.Add(asset, bcandles);
+
+                var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, minDate, maxDate);
+                askCandles.Add(asset, acandles);
+            }
+
+            var result = new List<PriceCandlesConsistencyResult>();
+            result.AddRange(allTradingPosition.CheckPriceCandlesConsistency(askCandles, bidCandles));
+            return result;
+        }
+
+        private IEnumerable<IPriceCandlesConsistencyResult> CheckPriceCandlesConsistency(List<ITradingPosition> allTradingPosition, Dictionary<string, IEnumerable<ICandle>> askCandles, Dictionary<string, IEnumerable<ICandle>> bidCandles)
         {
             throw new NotImplementedException();
         }

@@ -16,7 +16,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         private readonly int _monitorInterval;
         DateTime? _lastCheck;
 
-        public MonitorService(ILog log, MonitorSettings monitorSettings, IConsistencyService consistencyService )
+        public MonitorService(MonitorSettings monitorSettings, IConsistencyService consistencyService , ILog log)
         {
             _log = log;
             _monitorSettings = monitorSettings;

@@ -45,6 +45,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
                 .As<IShutdownManager>();
             RegisterPeriodicalHandlers(builder);
 
+            builder.RegisterType<PriceCandlesService>()
+                .As<IPriceCandlesService>()
+                .WithParameter(TypedParameter.From(_settings.PriceCandles));
+
             builder.RegisterType<ConsistencyService>()
                 .As<IConsistencyService>();
 

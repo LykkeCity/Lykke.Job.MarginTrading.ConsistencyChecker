@@ -1,0 +1,71 @@
+﻿using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions
+{
+    internal static class PriceCandlesExtensions
+    {
+        public static ICandle ToDto(this Service.CandlesHistory.Client.Models.Candle src)
+        {
+            return new Candle
+            {
+                Close = src.Close,
+                DateTime = src.DateTime,
+                High = src.High,
+                LastTradePrice = src.LastTradePrice,
+                Low = src.Low,
+                Open = src.Open,
+                TradingOppositeVolume = src.TradingOppositeVolume,
+                TradingVolume = src.TradingVolume
+            };
+        }
+        public static IEnumerable<PriceCandlesConsistencyResult> CheckPriceCandlesConsistency(this IEnumerable<ITradingPosition> tradingPositions, Dictionary<string, IEnumerable<ICandle>> askCandles, Dictionary<string, IEnumerable<ICandle>> bidCandles)
+        {
+            var result = new List<PriceCandlesConsistencyResult>();
+            foreach (var tradingPosition in tradingPositions)
+            {
+                var candlesList = tradingPosition.CoreSide == "Buy" ? askCandles : bidCandles;
+                var openCandle = candlesList[tradingPosition.CoreSymbol]
+                    .FirstOrDefault(c => tradingPosition.OpenDate >= c.DateTime);
+
+                if (tradingPosition.OpenPrice > openCandle.High)
+                    result.Add(new PriceCandlesConsistencyResult
+                    {
+                        Position = tradingPosition,
+                        Error = $"TradingPosition Open Price over Candle High Limit {openCandle.High}"
+                    });
+                if (tradingPosition.OpenPrice < openCandle.Low)
+                    result.Add(new PriceCandlesConsistencyResult
+                    {
+                        Position = tradingPosition,
+                        Error = $"TradingPosition Open Price below Candle Low Limit {openCandle.Low}"
+                    });
+                // If the trading is closed check close price.
+                if (tradingPosition.CloseDate != null)
+                {
+                    var closeCandle = candlesList[tradingPosition.CoreSymbol]
+                    .FirstOrDefault(c => tradingPosition.CloseDate >= c.DateTime);
+
+                    if (tradingPosition.ClosePrice > closeCandle.High)
+                        result.Add(new PriceCandlesConsistencyResult
+                        {
+                            Position = tradingPosition,
+                            Error = $"TradingPosition Close Price over Candle High Limit {openCandle.High}"
+                        });
+                    if (tradingPosition.OpenPrice < closeCandle.Low)
+                        result.Add(new PriceCandlesConsistencyResult
+                        {
+                            Position = tradingPosition,
+                            Error = $"TradingPosition Close Price below Candle Low Limit {openCandle.Low}"
+                        });
+                }
+            }
+
+            return result;
+        }
+    }
+    
+}
