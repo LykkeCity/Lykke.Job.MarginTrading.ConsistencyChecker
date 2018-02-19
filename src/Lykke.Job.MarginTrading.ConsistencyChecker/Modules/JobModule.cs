@@ -13,7 +13,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
     public class JobModule : Module
     {
         private readonly ConsistencyCheckerSettings _settings;
-        private readonly IReloadingManager<DbSettings> _dbSettingsManager;
+        //private readonly IReloadingManager<DbSettings> _dbSettingsManager;
         private readonly ILog _log;
         // NOTE: you can remove it if you don't need to use IServiceCollection extensions to register service specific dependencies
         private readonly IServiceCollection _services;
@@ -22,8 +22,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
         {
             _settings = settings;
             _log = log;
-            _dbSettingsManager = dbSettingsManager;
-
             _services = new ServiceCollection();
         }
 
@@ -50,6 +48,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
             builder.RegisterType<ConsistencyService>()
                 .As<IConsistencyService>();
 
+            builder.RegisterType<MonitorService>()
+                .As<IMonitorService>()
+                .WithParameter(TypedParameter.From(_settings.Monitor));
+
             builder.Populate(_services);
         }
 
@@ -57,7 +59,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
         {
             // TODO: You should register each periodical handler in DI container as IStartable singleton and autoactivate it
 
-            builder.RegisterType<MyPeriodicalHandler>()
+            builder.RegisterType<ConsistencyCheckHandler>()
                 .As<IStartable>()
                 .AutoActivate()
                 .SingleInstance();

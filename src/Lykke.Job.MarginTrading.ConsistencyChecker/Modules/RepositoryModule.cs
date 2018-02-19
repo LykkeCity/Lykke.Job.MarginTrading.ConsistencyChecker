@@ -4,9 +4,6 @@ using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Services;
 using Lykke.SettingsReader;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
 {

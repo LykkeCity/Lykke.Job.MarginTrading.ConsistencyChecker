@@ -147,7 +147,22 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 
         public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckMarginEventsAccountStatus(bool isSql, DateTime? from, DateTime? to)
         {
+            throw new NotImplementedException();
+        }
 
-        }        
+        public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckTradePnLConsistency(bool isSql, DateTime? from, DateTime? to)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<IBalanceAndOrderClosedCheckResult>> CheckHedgingServiceBalance(bool isSql, DateTime? from, DateTime? to)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

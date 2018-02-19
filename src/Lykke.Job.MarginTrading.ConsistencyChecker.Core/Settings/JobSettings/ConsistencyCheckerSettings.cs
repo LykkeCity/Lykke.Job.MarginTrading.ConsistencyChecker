@@ -3,5 +3,6 @@
         public class ConsistencyCheckerSettings
         {
             public DbSettings Db { get; set; }
-        }
+            public MonitorSettings Monitor { get; set; }
+    }
 }
