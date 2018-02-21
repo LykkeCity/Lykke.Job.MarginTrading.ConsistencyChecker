@@ -1,6 +1,7 @@
 ﻿using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Core;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions;
@@ -22,11 +23,12 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         {            
             _log = log;
             _priceCandlesSettings = priceCandlesSettings;
-            _candlesClient = new Candleshistoryservice();
+            _candlesClient = new Candleshistoryservice(new Uri(_priceCandlesSettings.HistoryUrl));
         }
 
         public async Task<IEnumerable<ICandle>> GetMinuteCandle(string assetPait, bool isAsk, DateTime from, DateTime to)
-        {            
+        {
+            _log.WriteInfo("GetMinuteCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
             var candleHistory = await _candlesClient.GetCandlesHistoryAsync(assetPait,
                 Service.CandlesHistory.Client.Models.CandlePriceType.Ask,
                 Service.CandlesHistory.Client.Models.CandleTimeInterval.Minute,
@@ -35,6 +37,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         }
         public async Task<IEnumerable<ICandle>> GetHourCandle(string assetPait, bool isAsk, DateTime from, DateTime to)
         {
+            _log.WriteInfo("GetHourCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
             var candleHistory = await _candlesClient.GetCandlesHistoryAsync(assetPait,
                 isAsk ? Service.CandlesHistory.Client.Models.CandlePriceType.Ask : Service.CandlesHistory.Client.Models.CandlePriceType.Bid,
                 Service.CandlesHistory.Client.Models.CandleTimeInterval.Hour,

@@ -1,5 +1,5 @@
 ﻿using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core;
 using System.Collections.Generic;
 using System.Linq;

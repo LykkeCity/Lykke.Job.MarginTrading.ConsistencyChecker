@@ -18,6 +18,9 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
         private readonly string _connectionString;
         private readonly ILog _log;
 
+        private string GetColumns =>
+            string.Join(",", typeof(IAccountTransactionsReport).GetProperties().Select(x => x.Name));
+
         public AccountTransactionsReportRepository(string connectionString, ILog log)
         {
             _log = log;
@@ -26,8 +29,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
 
         public async Task<IEnumerable<IAccountTransactionsReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo)
         {            
-            var query = $"SELECT" +
-                    " Id, Date, AccountId, ClientId, Amount, Balance, WithdrawTransferLimit, Comment, Type, PositionId" +
+            var query = $"SELECT " + GetColumns +
                     $" FROM {TableName}" +
                     $" WHERE (Date >= @from AND Date <= @to)";
 

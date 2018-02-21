@@ -6,6 +6,7 @@ using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
@@ -17,26 +18,24 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
         private readonly string _connectionString;
         private readonly ILog _log;
 
+        private string GetColumns =>
+            string.Join(",", typeof(IAccountMarginEventReport).GetProperties().Select(x => x.Name));
+
         public AccountMarginEventReportRepository(string connectionString, ILog log)
         {
             _log = log;
             _connectionString = connectionString;
         }
 
-        public async Task<IEnumerable<IAccountMarginEventReport>> GetAsync(string[] accountIds, DateTime? dtFrom, DateTime? dtTo)
-        {
-            var from = dtFrom.HasValue ? dtFrom?.ToString("u") : DateTime.MinValue.ToString("u");
-            var to = dtTo.HasValue ? dtTo?.ToString("u") : DateTime.MaxValue.ToString("u");
-            var query = $"SELECT" +
-                    " Id, EventId, ClientId, AccountId, TradingConditionId, Balance, BaseAssetId, EventTime, FreeMargin, IsEventStopout, MarginAvailable, " +
-                    " MarginCall, MarginInit, MarginUsageLevel, OpenPositionsCount, PnL, StopOut, TotalCapital, UsedMargin, WithdrawTransferLimit" +
+        public async Task<IEnumerable<IAccountMarginEventReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo)
+        {   
+            var query = $"SELECT " + GetColumns +
                     $" FROM {TableName}" +
-                    $" WHERE Id in({string.Join(",", accountIds)}) " +
-                    $" AND (EventTime >= '{from}' AND EventTime<='{to}')";
+                    $" WHERE (EventTime >= @from AND EventTime <= @to)";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                return await conn.QueryAsync<AccountMarginEventReport>(query);
+                return await conn.QueryAsync<AccountMarginEventReport>(query, new { from = dtFrom ?? new DateTime(2000, 01, 01), to = dtTo ?? DateTime.MaxValue });
             }
         }
     }

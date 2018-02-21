@@ -7,6 +7,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories
 {
     public interface IAccountsReportRepository
     {   
-        Task<IEnumerable<IAccountsReport>> GetAsync(string[] accountIds, DateTime? dtFrom, DateTime? dtTo);
+        Task<IEnumerable<IAccountsReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo);
     }
 }

@@ -30,21 +30,19 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
 
         public async Task<IEnumerable<ITradingPosition>> GetClosedAsync(DateTime? dtFrom, DateTime? dtTo)
         {
-            var query = $"SELECT " + GetColumns +
-                       $" FROM {ClosedTableName}" +
-                       $" WHERE (Date >= @from AND Date <= @to)";
-
-            using (var conn = new SqlConnection(_connectionString))
-            {
-                return (await conn.QueryAsync<TradingPosition>(query, new { from = dtFrom ?? new DateTime(2000, 01, 01), to = dtTo ?? DateTime.MaxValue }))
-                    .OrderByDescending(x => x.Date);
-            }
+            return await GetDataAsync(false, dtFrom, dtTo);
         }
 
         public async Task<IEnumerable<ITradingPosition>> GetOpenedAsync(DateTime? dtFrom, DateTime? dtTo)
         {
+            return await GetDataAsync(true, dtFrom, dtTo);
+        }
+
+        private async Task<IEnumerable<ITradingPosition>> GetDataAsync(bool openedTable, DateTime? dtFrom, DateTime? dtTo)
+        {
+            string table = openedTable ? OpenedTableName : ClosedTableName;
             var query = $"SELECT " + GetColumns +
-                       $" FROM {OpenedTableName}" +
+                       $" FROM {table}" +
                        $" WHERE (Date >= @from AND Date <= @to)";
 
             using (var conn = new SqlConnection(_connectionString))

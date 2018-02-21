@@ -1,7 +1,6 @@
 ﻿using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Core;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions;
 using System;
@@ -74,7 +73,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             var accountTransactions = await accountTransactionRepo.GetAsync(from, to);
             // TradePositionReportClosed records with Counterparty ID = LykkeHedgingService should be excluded from the check
             var tradingPositionsClosed = (await tradingPositionRepo.GetClosedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService"); ;
+                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService");
 
             var result = new List<BalanceAndOrderClosedCheckResult>();
 
@@ -147,49 +146,143 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             _log.WriteInfo("CheckBalanceAndOrderClosed", null, $"Check finished with {result.Count} errors");
             return result;
         }
-
-        public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckMarginEventsAccountStatus(bool isSql, DateTime? from, DateTime? to)
-        {
-            throw new NotImplementedException();
-        }
-
+               
+        /// <summary>
+        /// OpenPrice & ClosePrice consistency with Price Candles data
+        /// </summary>
+        /// <param name="isSql"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<IPriceCandlesConsistencyResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
         {
+            _log.WriteInfo("CheckCandlesPriceConsistency", null, "Started Check");
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
-            var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to)).ToList();
-            allTradingPosition.AddRange((await tradingPositionRepo.GetClosedAsync(from, to)));
-
-            var assets = allTradingPosition.Select(x => x.CoreSymbol).Distinct();            
-            var minDate = allTradingPosition.Min(x => x.OpenDate).Value;
-            var maxDate = allTradingPosition.Max(x => x.CloseDate).Value;
-
-            var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
-            var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
-            foreach (var asset in assets)
-            {                
-                var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, minDate, maxDate);
-                bidCandles.Add(asset, bcandles);
-
-                var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, minDate, maxDate);
-                askCandles.Add(asset, acandles);
-            }
-
+            var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to))
+                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService")
+                .ToList();
+            allTradingPosition.AddRange((await tradingPositionRepo.GetClosedAsync(from, to))
+                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService"));
+                       
+            
             var result = new List<PriceCandlesConsistencyResult>();
-            result.AddRange(allTradingPosition.CheckPriceCandlesConsistency(askCandles, bidCandles));
+            
+            // Process Open Price candles 1 day per loop
+            var minOpenDate = allTradingPosition.Min(x => x.OpenDate).Value;
+            var maxOpenDate = allTradingPosition.Max(x => x.OpenDate).Value;
+            var currentOpenDay = minOpenDate.Date;
+            do
+            {
+                var dayEnd = currentOpenDay.AddDays(1).AddMilliseconds(-1);
+                var dayTradingPositions = allTradingPosition.Where(t => t.OpenDate >= currentOpenDay && t.OpenDate <= dayEnd);
+                var assets = dayTradingPositions.Select(x => x.CoreSymbol)
+                    .Distinct();
+                if (dayTradingPositions.Count() >= 1)
+                {
+                    var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                    var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                    foreach (var asset in assets)
+                    {
+                        var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, currentOpenDay, dayEnd);
+                        bidCandles.Add(asset, bcandles);
+
+                        var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, currentOpenDay, dayEnd);
+                        askCandles.Add(asset, acandles);
+                    }
+                    result.AddRange(dayTradingPositions.CheckOpenPriceCandlesConsistency(askCandles, bidCandles));
+                }
+                currentOpenDay = currentOpenDay.AddDays(1);
+            } while (currentOpenDay <= maxOpenDate.Date);
+
+            // Process Close Price candles 1 day per loop
+            var minCloseDate = allTradingPosition.Min(x => x.CloseDate).Value;
+            var maxCloseDate = allTradingPosition.Max(x => x.CloseDate).Value;
+            var currentCloseDay = minCloseDate.Date;
+            do
+            {
+                var dayEnd = currentCloseDay.AddDays(1).AddMilliseconds(-1);
+                var dayTradingPositions = allTradingPosition
+                    .Where(t => t.CloseDate >= currentCloseDay && t.CloseDate <= dayEnd);
+                var assets = dayTradingPositions.Select(x => x.CoreSymbol)
+                    .Distinct();
+                if (dayTradingPositions.Count() >= 1)
+                {
+                    var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                    var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                    foreach (var asset in assets)
+                    {
+                        var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, currentCloseDay, dayEnd);
+                        bidCandles.Add(asset, bcandles);
+
+                        var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, currentCloseDay, dayEnd);
+                        askCandles.Add(asset, acandles);
+                    }
+                    result.AddRange(dayTradingPositions.CheckClosePriceCandlesConsistency(askCandles, bidCandles));
+                }
+                currentCloseDay = currentCloseDay.AddDays(1);
+            } while (currentCloseDay <= maxCloseDate.Date);
+            _log.WriteInfo("CheckCandlesPriceConsistency", null, $"Check finished with {result.Count} errors");
             return result;
         }
 
-        private IEnumerable<IPriceCandlesConsistencyResult> CheckPriceCandlesConsistency(List<ITradingPosition> allTradingPosition, Dictionary<string, IEnumerable<ICandle>> askCandles, Dictionary<string, IEnumerable<ICandle>> bidCandles)
+        /// <summary>
+        /// Trade PnL consistency with trade information
+        /// </summary>
+        /// <param name="isSql"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<ITradePnLConsistencyCheckResult>> CheckTradePnLConsistency(bool isSql, DateTime? from, DateTime? to)
         {
-            throw new NotImplementedException();
+            _log.WriteInfo("CheckTradePnLConsistency", null, "Started Check");
+                        
+            var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
+            var tradingPositions = (await tradingPositionRepo.GetOpenedAsync(from, to))
+                .ToList();
+            tradingPositions.AddRange(await tradingPositionRepo.GetClosedAsync(from, to));
+
+            var result = new List<TradePnLConsistencyCheckResult>();
+            foreach (var tradingPosition in tradingPositions)
+            {
+                // Apply the correct formula to calculate Fpnl based on OpenPrice, ClosePrice, Volume and Account Base Currency
+
+            }
+
+            _log.WriteInfo("CheckTradePnLConsistency", null, $"Check finished with {result.Count} errors");
+            return result;
         }
 
-        public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckTradePnLConsistency(bool isSql, DateTime? from, DateTime? to)
+        /// <summary>
+        /// MarginEvents account status consistency with balance transactions
+        /// </summary>
+        /// <param name="isSql"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IMarginEventsAccountStatusCheckResult>> CheckMarginEventsAccountStatus(bool isSql, DateTime? from, DateTime? to)
         {
-            throw new NotImplementedException();
-        }
+            _log.WriteInfo("CheckMarginEventsAccountStatus", null, "Started Check");
+            var marginEventsRepo = _repositoryManager.GetAccountMarginEventReport(isSql);
+            var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
+            var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
+            var marginEvents = await marginEventsRepo.GetAsync(from, to);
+            var accountTransaction = await accountTransactionRepo.GetAsync(from, to);
+
+            var result = new List<MarginEventsAccountStatusCheckResult>();
+
+            // balance equals the account balance calculated for the corresponding date base on transactions like in Check 1)
+            result.AddRange(marginEvents.CheckBalanceTransactions(accountTransaction));
+
+            var openTradingPositions = await tradingPositionRepo.GetOpenedAsync(from, to);
+            // Number of position open should correspond to positions open at that time according to OpenDate and CloseDate fields of Closed or Open Trades
+            result.AddRange(marginEvents.CheckOpenPositions(openTradingPositions));
+
+            _log.WriteInfo("CheckMarginEventsAccountStatus", null, $"Check finished with {result.Count} errors");
+            return result;
+        }
+        
         public Task<IEnumerable<IBalanceAndOrderClosedCheckResult>> CheckHedgingServiceBalance(bool isSql, DateTime? from, DateTime? to)
         {
             throw new NotImplementedException();

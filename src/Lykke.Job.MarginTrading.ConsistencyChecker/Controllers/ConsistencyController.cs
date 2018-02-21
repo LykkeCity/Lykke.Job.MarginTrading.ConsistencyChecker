@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -88,6 +89,42 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
         public async Task<IActionResult> CheckCandlesPriceConsistency(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckCandlesPriceConsistency(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
+
+        /// <summary>
+        /// Performs a Trade PnL consistency with trade information check
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckTradePnLConsistency")]
+        [SwaggerOperation("CheckTradePnLConsistency/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<TradePnLConsistencyCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckTradePnLConsistency(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckTradePnLConsistency(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
+
+        /// <summary>
+        /// Performs a MarginEvents account status consistency with balance transactions check
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckMarginEventsAccountStatus")]
+        [SwaggerOperation("CheckMarginEventsAccountStatus/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<MarginEventsAccountStatusCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckMarginEventsAccountStatus(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckMarginEventsAccountStatus(true, dateFrom, dateTo);
             if (res.Count() == 0)
                 return Ok("OK");
             else

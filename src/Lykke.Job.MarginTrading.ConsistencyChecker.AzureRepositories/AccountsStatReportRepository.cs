@@ -26,10 +26,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.AzureRepositories
         public async Task<IEnumerable<IAccountsStatReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo)
         {
             var partitionKeys = await GetPartitionKeys();
-            //var query = new TableQuery<AccountsStatReportEntity>().Where(TableQuery.CombineFilters(
-            //  TableQuery.GenerateFilterConditionForDate(nameof(AccountsStatReportEntity.Timestamp), QueryComparisons.GreaterThanOrEqual, dtFrom ?? DateTime.MinValue),
-            //  TableOperators.And,
-            //  TableQuery.GenerateFilterConditionForDate(nameof(AccountsStatReportEntity.Timestamp), QueryComparisons.LessThanOrEqual, dtTo ?? DateTime.MaxValue)));
             return (await _tableStorage.WhereAsync(partitionKeys, dtFrom ?? DateTime.MinValue, dtTo ?? DateTime.MaxValue, ToIntervalOption.IncludeTo))
                 .OrderByDescending(item => item.Timestamp);
         }
