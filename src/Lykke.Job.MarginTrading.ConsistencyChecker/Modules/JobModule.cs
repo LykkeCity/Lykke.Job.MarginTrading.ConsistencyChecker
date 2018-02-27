@@ -38,8 +38,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
                .As<IAlertSeverityLevelService>()
                .WithParameter(TypedParameter.From(_riskInformingSettingsManager))
                .SingleInstance();
-
-
+            
             builder.RegisterType<HealthService>()
                 .As<IHealthService>()
                 .SingleInstance();
@@ -58,7 +57,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
             builder.RegisterType<ConsistencyService>()
                 .As<IConsistencyService>();
 
-            builder.RegisterType<MonitorService>()
+            builder.RegisterType<ConsistencyMonitor >()
                 .As<IMonitorService>()
                 .WithParameter(TypedParameter.From(_settings.Monitor));
 

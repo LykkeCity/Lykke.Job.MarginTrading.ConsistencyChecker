@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Autofac;
+﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AzureStorage.Tables;
 using Common.Log;
@@ -8,19 +6,18 @@ using Lykke.Common.ApiLibrary.Middleware;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Infrastructure;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Modules;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Infrastructure;
 using Lykke.Logs;
 using Lykke.SettingsReader;
 using Lykke.SlackNotification.AzureQueue;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker
 {
@@ -201,7 +198,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log
             var slackService = CreateSlackService(services, settings, aggregateLogger);
-           
+            services.AddSingleton<IMtSlackNotificationsSender>(slackService);
+
             var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
 
             // Creating azure storage logger, which logs own messages to concole log

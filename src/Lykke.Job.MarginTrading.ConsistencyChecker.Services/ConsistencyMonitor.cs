@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 {
-    public class MonitorService: IMonitorService
+    public class ConsistencyMonitor : IMonitorService
     {
         private readonly ILog _log;
         private readonly IConsistencyService _consistencyService;
@@ -28,7 +28,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 
         DateTime? _lastCheck;
 
-        public MonitorService(MonitorSettings monitorSettings, 
+        public ConsistencyMonitor (MonitorSettings monitorSettings, 
             IConsistencyService consistencyService,
             IMtSlackNotificationsSender slackNotificationsSender,
             ICheckResultRepository checkResultRepository,
@@ -118,7 +118,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             _log.WriteInfoAsync("CheckConsistency", null, message);
             var slackChannelType = _alertSeverityLevelService.GetSlackChannelType(eventType);
             if (!string.IsNullOrWhiteSpace(slackChannelType))
-                _slackNotificationsSender.SendRawAsync(slackChannelType, nameof(ConsistencyService), message);
+                _slackNotificationsSender.SendRawAsync(slackChannelType, nameof(ConsistencyMonitor), message);
         }
     }
 }
