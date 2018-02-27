@@ -1,8 +1,8 @@
 ﻿namespace Lykke.Job.MarginTrading.ConsistencyChecker.Contract
 {
-    public interface ITradePnLConsistencyCheckResult
+    public interface IHedgingServiceCheckResult
     {
-        ITradingPosition Position { get; }        
+        ITradingPosition OpenPosition { get; }        
         string Error { get; }
     }
 }

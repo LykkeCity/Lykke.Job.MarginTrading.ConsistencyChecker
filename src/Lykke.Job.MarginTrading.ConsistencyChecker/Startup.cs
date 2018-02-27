@@ -9,6 +9,7 @@ using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Infrastructure;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Modules;
 using Lykke.Logs;
@@ -61,7 +62,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
                 Log = CreateLogWithSlack(services, appSettings);
 
-                RegisterModules(builder, appSettings.Nested(m => m.ConsistencyCheckerJob), Log);
+                RegisterModules(builder, appSettings, Log);
                 
                 builder.Populate(services);
 
@@ -76,10 +77,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
             }
         }
 
-        private void RegisterModules(ContainerBuilder builder, IReloadingManager<ConsistencyCheckerSettings> settings, ILog log)
+        private void RegisterModules(ContainerBuilder builder, IReloadingManager<AppSettings> settings, ILog log)
         {
-            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.Db), Log));
-            builder.RegisterModule(new JobModule(settings.CurrentValue, settings.Nested(x => x.Db), Log));
+            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.ConsistencyCheckerJob.Db), Log));
+            builder.RegisterModule(new JobModule(settings.CurrentValue.ConsistencyCheckerJob, settings.Nested(x => x.RiskInformingSettings), Log));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
@@ -199,12 +200,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
                 consoleLogger);
 
             // Creating slack notification service, which logs own azure queue processing messages to aggregate log
-            var slackService = services.UseSlackNotificationsSenderViaAzureQueue(new AzureQueueIntegration.AzureQueueSettings
-            {
-                ConnectionString = settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
-                QueueName = settings.CurrentValue.SlackNotifications.AzureQueue.QueueName
-            }, aggregateLogger);
-
+            var slackService = CreateSlackService(services, settings, aggregateLogger);
+           
             var slackNotificationsManager = new LykkeLogToAzureSlackNotificationsManager(slackService, consoleLogger);
 
             // Creating azure storage logger, which logs own messages to concole log
@@ -218,6 +215,25 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
             aggregateLogger.AddLog(azureStorageLogger);
 
             return aggregateLogger;
+        }
+        
+        private static MtSlackNotificationsSender CreateSlackService(IServiceCollection services, IReloadingManager<AppSettings> settings, AggregateLogger aggregateLogger)
+        {
+            if (settings.CurrentValue.SlackNotifications == null)
+            {
+                return null;
+            }
+            else
+            {
+                var rootSlackSender = services.UseSlackNotificationsSenderViaAzureQueue(
+                    new AzureQueueIntegration.AzureQueueSettings
+                    {
+                        ConnectionString = settings.CurrentValue.SlackNotifications.AzureQueue.ConnectionString,
+                        QueueName = settings.CurrentValue.SlackNotifications.AzureQueue.QueueName
+                    }, aggregateLogger);
+
+                return new MtSlackNotificationsSender(rootSlackSender, "MT ConsistencyChecker", Program.EnvInfo);
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions
+namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 {
     internal static class PriceCandlesExtensions
     {
@@ -66,12 +66,14 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions
                     result.Add(new PriceCandlesConsistencyResult
                     {
                         Position = tradingPosition,
+                        Candle = closeCandle,
                         Error = $"TradingPosition Close Price over Candle High Limit {closeCandle.High}"
                     });
                 if (tradingPosition.ClosePrice < closeCandle.Low)
                     result.Add(new PriceCandlesConsistencyResult
                     {
                         Position = tradingPosition,
+                        Candle = closeCandle,
                         Error = $"TradingPosition Close Price below Candle Low Limit {closeCandle.Low}"
                     });
             }

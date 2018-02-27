@@ -3,7 +3,7 @@ using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions
+namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 {
     public static class MarginEventsAccountStatusExtensions
     {
@@ -17,36 +17,50 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions
         {
             var result = new List<MarginEventsAccountStatusCheckResult>();
 
-            // There can be several events for the same AccountId:
-            var accountIds = marginEvents.Select(e => e.AccountId)
-                .Distinct();
-
-            a
-            foreach (var accountId in accountIds)
+            foreach (var marginEvent in marginEvents.OrderBy(e => e.EventTime))
             {
-                var accountMarginEvents = marginEvents.Where(e => e.AccountId == accountId)
-                    .OrderBy(x => x.EventTime);
-
-                var total = accountTransaction
-                    .Where(t => t.AccountId == accountId)
-                    .Sum(x => x.Amount);
-
-                var lastEntry = accountMarginEvents.Last();
-                if (lastEntry.Balance != total)
+                var transactionsUntilEvent = accountTransaction
+                    .Where(t => t.AccountId == marginEvent.AccountId && t.Date <= marginEvent.EventTime)
+                    .OrderBy(t => t.Date);
+                var balance = transactionsUntilEvent.Sum(x => x.Amount);
+                if (marginEvent.Balance != balance)
                     result.Add(new MarginEventsAccountStatusCheckResult
                     {
-                        MarginEvent = lastEntry,
-                        Error = $"[delta]={lastEntry.Balance - total}, [marginEvent.Balance]={lastEntry.Balance}, [accountTransaction.Sum]={total}"
+                        MarginEvent = marginEvent,
+                        Error = $"[balance delta]={marginEvent.Balance - balance}, [marginEvent.Balance]={marginEvent.Balance}, [accountTransaction.Sum]={balance}"
                     });
-
             }
-
             return result;
         }
 
         public static IEnumerable<MarginEventsAccountStatusCheckResult> CheckOpenPositions(this IEnumerable<IAccountMarginEventReport> marginEvents, IEnumerable<ITradingPosition> tradingPositions)
         {
-            return new List<MarginEventsAccountStatusCheckResult>();
+            var result = new List<MarginEventsAccountStatusCheckResult>();
+
+            foreach (var marginEvent in marginEvents.OrderBy(e => e.EventTime))
+            {
+                var accountPositions = tradingPositions.Where(t => t.TakerAccountId == marginEvent.AccountId)                        
+                    .OrderBy(t => t.Date);
+                if (accountPositions.Count() < 1)
+                {
+                    result.Add(new MarginEventsAccountStatusCheckResult
+                    {
+                        MarginEvent = marginEvent,
+                        Error = $"No TradingPositions for Margin Event Account Id=[{marginEvent.AccountId}]"
+                    });
+                    continue;
+                }
+                var accountOpenPositionsUntilEvent = accountPositions.Where(t => t.CloseDate == null || t.CloseDate > marginEvent.EventTime);
+                var openPositions = accountOpenPositionsUntilEvent.Count();
+
+                if (marginEvent.OpenPositionsCount != openPositions)
+                    result.Add(new MarginEventsAccountStatusCheckResult
+                    {
+                        MarginEvent = marginEvent,
+                        Error = $"[open positions delta]={marginEvent.OpenPositionsCount - openPositions}, [marginEvent.OpenPositionsCount]={marginEvent.OpenPositionsCount}, [accountTransaction.openPositions]={openPositions}"
+                    });
+            }
+            return result;
         }
 
     }

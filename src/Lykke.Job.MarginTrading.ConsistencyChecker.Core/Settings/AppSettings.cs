@@ -7,5 +7,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings
     {
         public ConsistencyCheckerSettings ConsistencyCheckerJob { get; set; }
         public SlackNotificationsSettings SlackNotifications { get; set; }
+        public RiskInformingSettings RiskInformingSettings { get; set; }
     }
 }

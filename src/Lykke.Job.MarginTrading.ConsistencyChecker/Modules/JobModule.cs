@@ -2,10 +2,11 @@
 using Autofac.Extensions.DependencyInjection;
 using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
+using Lykke.Job.MarginTrading.ConsistencyChecker.PeriodicalHandlers;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Services;
 using Lykke.SettingsReader;
-using Lykke.Job.MarginTrading.ConsistencyChecker.PeriodicalHandlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
@@ -13,14 +14,14 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
     public class JobModule : Module
     {
         private readonly ConsistencyCheckerSettings _settings;
-        //private readonly IReloadingManager<DbSettings> _dbSettingsManager;
+        private readonly IReloadingManager<RiskInformingSettings> _riskInformingSettingsManager;
         private readonly ILog _log;
-        // NOTE: you can remove it if you don't need to use IServiceCollection extensions to register service specific dependencies
         private readonly IServiceCollection _services;
 
-        public JobModule(ConsistencyCheckerSettings settings, IReloadingManager<DbSettings> dbSettingsManager, ILog log)
+        public JobModule(ConsistencyCheckerSettings settings,  IReloadingManager<RiskInformingSettings> riskInformingSettingsManager, ILog log)
         {
             _settings = settings;
+            _riskInformingSettingsManager = riskInformingSettingsManager;
             _log = log;
             _services = new ServiceCollection();
         }
@@ -33,6 +34,11 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
             //  .As<IQuotesPublisher>()
             //  .WithParameter(TypedParameter.From(_settings.Rabbit.ConnectionString))
 
+            builder.RegisterType<AlertSeverityLevelService>()
+               .As<IAlertSeverityLevelService>()
+               .WithParameter(TypedParameter.From(_riskInformingSettingsManager))
+               .SingleInstance();
+
 
             builder.RegisterType<HealthService>()
                 .As<IHealthService>()
@@ -44,7 +50,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
             builder.RegisterType<ShutdownManager>()
                 .As<IShutdownManager>();
             RegisterPeriodicalHandlers(builder);
-
+                       
             builder.RegisterType<PriceCandlesService>()
                 .As<IPriceCandlesService>()
                 .WithParameter(TypedParameter.From(_settings.PriceCandles));
@@ -61,8 +67,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Modules
 
         private void RegisterPeriodicalHandlers(ContainerBuilder builder)
         {
-            // TODO: You should register each periodical handler in DI container as IStartable singleton and autoactivate it
-
             builder.RegisterType<ConsistencyCheckHandler>()
                 .As<IStartable>()
                 .AutoActivate()

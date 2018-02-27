@@ -2,7 +2,6 @@
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,17 +11,19 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 {
     public class ConsistencyService : IConsistencyService
     {
-        private readonly IRepositoryManager _repositoryManager;
+        private readonly IRepositoryManager _repositoryManager;        
+        private readonly IPriceCandlesService _priceCandlesService;        
         private readonly ILog _log;
-        private readonly IPriceCandlesService _priceCandlesService;
 
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="repositoryManager">IRepositoryManager object</param>
         /// <param name="log">ILog object</param>
-        public ConsistencyService(IRepositoryManager repositoryManager,IPriceCandlesService priceCandlesService, ILog log)
-        {
+        public ConsistencyService(IRepositoryManager repositoryManager,
+            IPriceCandlesService priceCandlesService,
+            ILog log)
+        {            
             _repositoryManager = repositoryManager;
             _priceCandlesService = priceCandlesService;
             _log = log;
@@ -37,7 +38,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IBalanceAndTransactionAmountCheckResult>> CheckBalanceAndTransactionAmount(bool isSql, DateTime? from, DateTime? to)
         {
-            _log.WriteInfo("CheckBalanceAndTransactionAmount", null, "Started Check");
+            await _log.WriteInfoAsync("CheckBalanceAndTransactionAmount", null, "Started Check");
             var accountStatsRepo = _repositoryManager.GetAccountsStatReport(isSql);
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
 
@@ -52,7 +53,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             // AccountStatusReport.Balance should be equal to total of MarginAccountTransactionReport.Amount
             result.AddRange(accountStats.CheckBalanceTransactions(accountTransaction));
 
-            _log.WriteInfo("CheckBalanceAndTransactionAmount", null, $"Check finished with {result.Count} errors");
+            await _log.WriteInfoAsync("CheckBalanceAndTransactionAmount", null, $"Check finished with {result.Count} errors");
             return result;
         }
 
@@ -64,8 +65,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <param name="to">End Date</param>
         /// <returns></returns>
         public async Task<IEnumerable<IBalanceAndOrderClosedCheckResult>> CheckBalanceAndOrderClosed(bool isSql, DateTime? from, DateTime? to)
-        {
-            _log.WriteInfo("CheckBalanceAndOrderClosed", null, "Started Check");
+        {            
+            await _log.WriteInfoAsync("CheckBalanceAndOrderClosed", null, "Started Check");
 
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
@@ -93,15 +94,44 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             // DateTime should be similar (with difference no more than 1 minute
             result.AddRange(tradingPositionsClosed.CheckDate(accountTransactions));
 
-            /// No orphaned MarginAccountTransactionReport records should exist
-            /// No double records should exist on either side (TradingPositionClosed)
+            // No orphaned MarginAccountTransactionReport records should exist
+            // No double records should exist on either side (TradingPositionClosed)
             result.AddRange(tradingPositionsClosed.CheckPositionCount(accountTransactions));
 
-
-            _log.WriteInfo("CheckBalanceAndOrderClosed", null, $"Check finished with {result.Count} errors");
+            await _log.WriteInfoAsync("CheckBalanceAndOrderClosed", null, $"Check finished with {result.Count} errors");
             return result;
         }
-        
+
+        /// <summary>
+        /// TradePositionReportClosed records with Counterparty ID = LykkeHedgingService* should be checked separately: 
+        /// sum of volume on each TakerAccountId-CoreSymbol must be equal to current value taken from TradingPositionOpen.
+        /// need to take each value of TakerAccountId-CoreSymbol from TradingPositionOpen and compare it to sum of TakerAccountId-CoreSymbol's from TradingPositionClosed
+        /// </summary>
+        /// <param name="isSql"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IHedgingServiceCheckResult>> CheckHedgingService(bool isSql, DateTime? from, DateTime? to)
+        {
+            await _log.WriteInfoAsync("CheckHedgingService", null, "Started Check");
+            var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
+
+            var hedgingServicePositionsClosed = (await tradingPositionRepo.GetClosedAsync(from, to))
+                .Where(m => m.TakerCounterpartyId == "LykkeHedgingService");
+
+            var hedgingServicePositionsOpened = (await tradingPositionRepo.GetOpenedAsync(from, to))
+                .Where(m => m.TakerCounterpartyId == "LykkeHedgingService");
+
+            var result = new List<HedgingServiceCheckResult>();
+
+            // TradePositionReportClosed records with Counterparty ID = LykkeHedgingService* should be checked separately: 
+            // sum of volume on each TakerAccountId-CoreSymbol must be equal to current value taken from TradingPositionOpen.
+            result.AddRange(hedgingServicePositionsOpened.CheckHedgingServicePositionsVolume(hedgingServicePositionsClosed));
+
+            await _log.WriteInfoAsync("CheckHedgingService", null, $"Check finished with {result.Count} errors");
+            return result;
+        }
+
         /// <summary>
         /// OrdersReport should be consistent with TradePositionReportClosed & TradePositionReportOpened tables
         /// </summary>
@@ -111,7 +141,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckOrdersReportAndOrderClosedOpened(bool isSql, DateTime? from, DateTime? to)
         {
-            _log.WriteInfo("CheckOrdersReportAndOrderClosedOpened", null, "Started Check");
+            await _log.WriteInfoAsync("CheckOrdersReportAndOrderClosedOpened", null, "Started Check");
 
             var tradingOrdersReportRepo = _repositoryManager.GetTradingOrder(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
@@ -134,16 +164,16 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             // Date should exactly match
             result.AddRange(tradingOrders.CheckOrdersDate(tradingPositions));
 
-            // OrderType should match the CloseReason for close orders
-            result.AddRange(tradingOrders.CheckOrderTypes(tradingPositions));
+            // OrderType should match the CloseReason for close orders - 
+            //result.AddRange(tradingOrders.CheckOrderTypes(tradingPositions));
 
-            // AccountID should match
-            result.AddRange(tradingOrders.CheckOrderAccountID(tradingPositions));
+            // AccountID should match - No AccountId in Orders.. So check may be removed
+            //result.AddRange(tradingOrders.CheckOrderAccountID(tradingPositions));
 
             // ClientID should match            
             result.AddRange(tradingOrders.CheckOrderClientID(tradingPositions));
 
-            _log.WriteInfo("CheckBalanceAndOrderClosed", null, $"Check finished with {result.Count} errors");
+            await _log.WriteInfoAsync("CheckOrdersReportAndOrderClosedOpened", null, $"Check finished with {result.Count} errors");
             return result;
         }
                
@@ -156,7 +186,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IPriceCandlesConsistencyResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
         {
-            _log.WriteInfo("CheckCandlesPriceConsistency", null, "Started Check");
+            await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, "Started Check");
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to))
@@ -167,7 +197,12 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                        
             
             var result = new List<PriceCandlesConsistencyResult>();
-            
+            if (allTradingPosition.Count < 1)
+            {
+                await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, "Check finished with 0 errors");
+                return result;
+            }
+
             // Process Open Price candles 1 day per loop
             var minOpenDate = allTradingPosition.Min(x => x.OpenDate).Value;
             var maxOpenDate = allTradingPosition.Max(x => x.OpenDate).Value;
@@ -222,37 +257,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                 }
                 currentCloseDay = currentCloseDay.AddDays(1);
             } while (currentCloseDay <= maxCloseDate.Date);
-            _log.WriteInfo("CheckCandlesPriceConsistency", null, $"Check finished with {result.Count} errors");
+            await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, $"Check finished with {result.Count} errors");
             return result;
         }
-
-        /// <summary>
-        /// Trade PnL consistency with trade information
-        /// </summary>
-        /// <param name="isSql"></param>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <returns></returns>
-        public async Task<IEnumerable<ITradePnLConsistencyCheckResult>> CheckTradePnLConsistency(bool isSql, DateTime? from, DateTime? to)
-        {
-            _log.WriteInfo("CheckTradePnLConsistency", null, "Started Check");
-                        
-            var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
-            var tradingPositions = (await tradingPositionRepo.GetOpenedAsync(from, to))
-                .ToList();
-            tradingPositions.AddRange(await tradingPositionRepo.GetClosedAsync(from, to));
-
-            var result = new List<TradePnLConsistencyCheckResult>();
-            foreach (var tradingPosition in tradingPositions)
-            {
-                // Apply the correct formula to calculate Fpnl based on OpenPrice, ClosePrice, Volume and Account Base Currency
-
-            }
-
-            _log.WriteInfo("CheckTradePnLConsistency", null, $"Check finished with {result.Count} errors");
-            return result;
-        }
-
+        
         /// <summary>
         /// MarginEvents account status consistency with balance transactions
         /// </summary>
@@ -262,30 +270,27 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IMarginEventsAccountStatusCheckResult>> CheckMarginEventsAccountStatus(bool isSql, DateTime? from, DateTime? to)
         {
-            _log.WriteInfo("CheckMarginEventsAccountStatus", null, "Started Check");
+            await _log.WriteInfoAsync("CheckMarginEventsAccountStatus", null, "Started Check");
             var marginEventsRepo = _repositoryManager.GetAccountMarginEventReport(isSql);
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var marginEvents = await marginEventsRepo.GetAsync(from, to);
-            var accountTransaction = await accountTransactionRepo.GetAsync(from, to);
-
             var result = new List<MarginEventsAccountStatusCheckResult>();
 
             // balance equals the account balance calculated for the corresponding date base on transactions like in Check 1)
+            var accountTransaction = await accountTransactionRepo.GetAsync(from, to);
             result.AddRange(marginEvents.CheckBalanceTransactions(accountTransaction));
 
-            var openTradingPositions = await tradingPositionRepo.GetOpenedAsync(from, to);
             // Number of position open should correspond to positions open at that time according to OpenDate and CloseDate fields of Closed or Open Trades
-            result.AddRange(marginEvents.CheckOpenPositions(openTradingPositions));
+            var tradingPositions = (await tradingPositionRepo.GetOpenedAsync(from, to)).ToList();
+            tradingPositions.AddRange((await tradingPositionRepo.GetClosedAsync(from, to)));            
+            result.AddRange(marginEvents.CheckOpenPositions(tradingPositions));
 
-            _log.WriteInfo("CheckMarginEventsAccountStatus", null, $"Check finished with {result.Count} errors");
+            await _log.WriteInfoAsync("CheckMarginEventsAccountStatus", null, $"Check finished with {result.Count} errors");
             return result;
         }
         
-        public Task<IEnumerable<IBalanceAndOrderClosedCheckResult>> CheckHedgingServiceBalance(bool isSql, DateTime? from, DateTime? to)
-        {
-            throw new NotImplementedException();
-        }
+
     }
 }

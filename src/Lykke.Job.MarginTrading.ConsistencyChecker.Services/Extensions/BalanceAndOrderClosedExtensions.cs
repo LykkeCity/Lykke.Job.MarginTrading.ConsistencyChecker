@@ -173,5 +173,6 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             }
             return result;
         }
+                
     }
 }

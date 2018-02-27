@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
@@ -17,10 +18,12 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
     public class ConsistencyController : Controller
     {
         private readonly IConsistencyService _consistencyService;
+        private readonly ILog _log;
 
-        public ConsistencyController(IConsistencyService consistencyService)
-        {
+        public ConsistencyController(IConsistencyService consistencyService, ILog log)
+        {            
             _consistencyService = consistencyService;
+            _log = log;
         }
 
         /// <summary>
@@ -52,7 +55,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
         [ProducesResponseType(typeof(List<BalanceAndOrderClosedCheckResult>), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> CheckBalanceAndOrderClosed(DateTime? dateFrom, DateTime? dateTo)
         {
-            var res = await _consistencyService.CheckBalanceAndOrderClosed(true, dateFrom, dateTo);
+            var res = await _consistencyService. CheckBalanceAndOrderClosed(true, dateFrom, dateTo);
             if (res.Count() == 0)
                 return Ok("OK");
             else
@@ -95,24 +98,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
                 return Ok(res);
         }
 
-        /// <summary>
-        /// Performs a Trade PnL consistency with trade information check
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("CheckTradePnLConsistency")]
-        [SwaggerOperation("CheckTradePnLConsistency/{dateFrom}/{dateTo}")]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(List<TradePnLConsistencyCheckResult>), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> CheckTradePnLConsistency(DateTime? dateFrom, DateTime? dateTo)
-        {
-            var res = await _consistencyService.CheckTradePnLConsistency(true, dateFrom, dateTo);
-            if (res.Count() == 0)
-                return Ok("OK");
-            else
-                return Ok(res);
-        }
-
+  
         /// <summary>
         /// Performs a MarginEvents account status consistency with balance transactions check
         /// </summary>
@@ -125,6 +111,25 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Controllers
         public async Task<IActionResult> CheckMarginEventsAccountStatus(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckMarginEventsAccountStatus(true, dateFrom, dateTo);
+            if (res.Count() == 0)
+                return Ok("OK");
+            else
+                return Ok(res);
+        }
+
+
+        /// <summary>
+        /// Performs a MarginEvents account status consistency with balance transactions check
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CheckHedgingService")]
+        [SwaggerOperation("CheckHedgingService/{dateFrom}/{dateTo}")]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<HedgingServiceCheckResult>), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> CheckHedgingService(DateTime? dateFrom, DateTime? dateTo)
+        {
+            var res = await _consistencyService.CheckHedgingService(true, dateFrom, dateTo);
             if (res.Count() == 0)
                 return Ok("OK");
             else

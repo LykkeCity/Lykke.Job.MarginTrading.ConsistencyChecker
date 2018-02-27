@@ -77,7 +77,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrdersDate(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
         {
             var result = new List<OrdersReportAndOrderClosedOpenedCheckResult>();
-            // for each TradePosition based on TakerPositionID (Closed Positions Table)
+            // for each TradePosition based on TakerPositionID
             foreach (var tradingPosition in tradingPositions.OrderBy(x => x.Date))
             {
                 var tradingPositionOrders = tradingOrders
@@ -88,9 +88,11 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                 // Date should exactly match
                 var msg = new List<string>();
 
-                if (openOrderReport != null && openOrderReport.Date.CompareTo(tradingPosition.OpenDate) != 0)
+                if (openOrderReport != null && 
+                    openOrderReport.ExecutionTimestamp?.CompareTo(tradingPosition.OpenDate) != 0)
                     msg.Add($"Open date doesn't match: openOrderReport.Date=[{openOrderReport.Date.ToDateTimeCustomString()}] tradingPosition.OpenDate=[{tradingPosition.OpenDate?.ToDateTimeCustomString()}]");
-                if (closeOrderReport != null && closeOrderReport.Date.CompareTo(tradingPosition.CloseDate) != 0)
+                if (closeOrderReport != null && 
+                    closeOrderReport.ExecutionTimestamp?.CompareTo(tradingPosition.CloseDate) != 0)
                     msg.Add($"Close date doesn't match: closeOrderReport.Date=[{closeOrderReport.Date.ToDateTimeCustomString()}] tradingPosition.CloseDate=[{tradingPosition.CloseDate?.ToDateTimeCustomString()}]");
                 if (msg.Count > 0)
                     result.Add(new OrdersReportAndOrderClosedOpenedCheckResult
@@ -102,36 +104,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             }
             return result;
         }
-
-        /// <summary>
-        /// OrderType should match the CloseReason for close orders
-        /// </summary>
-        /// <param name="tradingOrders"></param>
-        /// <param name="tradingPositions"></param>
-        /// <returns></returns>
-        internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrderTypes(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
-        {
-            // OrderType should match the CloseReason for close orders
-            // TODO:
-            // - order type?????
-            return new OrdersReportAndOrderClosedOpenedCheckResult[0];
-        }
-
-        /// <summary>
-        /// AccountID should match
-        /// </summary>
-        /// <param name="tradingOrders"></param>
-        /// <param name="tradingPositions"></param>
-        /// <returns></returns>
-        internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrderAccountID(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
-        {
-            // AccountID should match
-            // TODO:
-            // - TradingOrderReport doesn't have Account Id
-            return new OrdersReportAndOrderClosedOpenedCheckResult[0];
-        }
-
-
+        
         /// <summary>
         /// ClientID should match
         /// </summary>

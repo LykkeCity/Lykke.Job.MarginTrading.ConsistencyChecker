@@ -1,15 +1,13 @@
 ﻿using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
-using Lykke.Job.MarginTrading.ConsistencyChecker.Services.Extensions;
+
 using Lykke.Service.CandlesHistory.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
@@ -28,7 +26,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
 
         public async Task<IEnumerable<ICandle>> GetMinuteCandle(string assetPait, bool isAsk, DateTime from, DateTime to)
         {
-            _log.WriteInfo("GetMinuteCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
+            await _log.WriteInfoAsync("GetMinuteCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
             var candleHistory = await _candlesClient.GetCandlesHistoryAsync(assetPait,
                 Service.CandlesHistory.Client.Models.CandlePriceType.Ask,
                 Service.CandlesHistory.Client.Models.CandleTimeInterval.Minute,
@@ -37,7 +35,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         }
         public async Task<IEnumerable<ICandle>> GetHourCandle(string assetPait, bool isAsk, DateTime from, DateTime to)
         {
-            _log.WriteInfo("GetHourCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
+            await _log.WriteInfoAsync("GetHourCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
             var candleHistory = await _candlesClient.GetCandlesHistoryAsync(assetPait,
                 isAsk ? Service.CandlesHistory.Client.Models.CandlePriceType.Ask : Service.CandlesHistory.Client.Models.CandlePriceType.Bid,
                 Service.CandlesHistory.Client.Models.CandleTimeInterval.Hour,
