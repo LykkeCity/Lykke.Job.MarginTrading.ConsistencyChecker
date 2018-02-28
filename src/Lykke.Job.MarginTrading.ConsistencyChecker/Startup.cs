@@ -76,8 +76,8 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
         private void RegisterModules(ContainerBuilder builder, IReloadingManager<AppSettings> settings, ILog log)
         {
-            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.ConsistencyCheckerJob.Db), Log));
-            builder.RegisterModule(new JobModule(settings.CurrentValue.ConsistencyCheckerJob, settings.Nested(x => x.RiskInformingSettings), Log));
+            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.MtConsistencyCheckerJob.Db), Log));
+            builder.RegisterModule(new JobModule(settings.CurrentValue.MtConsistencyCheckerJob, settings.Nested(x => x.RiskInformingSettings), Log));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)
@@ -180,7 +180,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker
 
             aggregateLogger.AddLog(consoleLogger);
 
-            var dbLogConnectionStringManager = settings.Nested(x => x.ConsistencyCheckerJob.Db.LogsConnString);
+            var dbLogConnectionStringManager = settings.Nested(x => x.MtConsistencyCheckerJob.Db.LogsConnString);
             var dbLogConnectionString = dbLogConnectionStringManager.CurrentValue;
 
             if (string.IsNullOrEmpty(dbLogConnectionString))
