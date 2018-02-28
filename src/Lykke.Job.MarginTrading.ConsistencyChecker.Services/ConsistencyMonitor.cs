@@ -61,6 +61,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             else
                 _lastCheck = lastCheckResult.DateTo;
 
+            _log.WriteInfo(nameof(ConsistencyMonitor), null, $"Consistency Monitor Started. LastCheck:[{_lastCheck}]");
         }
 
         public int MonitorInterval => _monitorInterval;
