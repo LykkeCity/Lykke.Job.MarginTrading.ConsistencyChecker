@@ -5,7 +5,7 @@ services:
     container_name: margintradingconsistencychecker
     environment:
       - SettingsUrl=${SettingsUrl}
-      - Env=${Env}
+      - ENV_INFO=${Env}
     ports:
       - "5000:5000"
     networks:
