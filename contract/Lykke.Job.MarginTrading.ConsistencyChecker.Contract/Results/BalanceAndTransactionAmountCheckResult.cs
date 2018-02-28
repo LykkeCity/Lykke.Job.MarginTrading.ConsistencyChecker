@@ -1,4 +1,4 @@
-﻿namespace Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models
+﻿namespace Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Results
 {
     public class BalanceAndTransactionAmountCheckResult : IBalanceAndTransactionAmountCheckResult
     {

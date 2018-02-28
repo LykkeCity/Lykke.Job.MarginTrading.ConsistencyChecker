@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.MarginTrading.ConsistencyChecker", "src\Lykke.Job.MarginTrading.ConsistencyChecker\Lykke.Job.MarginTrading.ConsistencyChecker.csproj", "{5566FD3E-0DB6-4BF3-A98D-4A1181B3E02C}"
 EndProject
@@ -23,7 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "4. Contract", "4. Contract"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.MarginTrading.ConsistencyChecker.Contract", "contract\Lykke.Job.MarginTrading.ConsistencyChecker.Contract\Lykke.Job.MarginTrading.ConsistencyChecker.Contract.csproj", "{58FEDF76-9CC9-4B3B-877F-0795CE7C50F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories", "src\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories.csproj", "{858F4F57-E361-4BBD-AC4D-0D7883ECA3BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories", "src\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories\Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories.csproj", "{858F4F57-E361-4BBD-AC4D-0D7883ECA3BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

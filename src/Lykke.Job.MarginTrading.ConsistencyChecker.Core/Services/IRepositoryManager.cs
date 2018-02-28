@@ -8,5 +8,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services
         IAccountsReportRepository GetAccountsReport(bool isSql);
         IAccountsStatReportRepository GetAccountsStatReport(bool isSql);
         IAccountTransactionsReportRepository GetAccountTransactionsReport(bool isSql);
+        ITradingPositionRepository GetTradingPosition(bool isSql);
+        ITradingOrderRepository GetTradingOrder(bool isSql);
     }
 }

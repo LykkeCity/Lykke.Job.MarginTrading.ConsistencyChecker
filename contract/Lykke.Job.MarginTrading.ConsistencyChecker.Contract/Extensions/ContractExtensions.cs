@@ -2,7 +2,7 @@
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.Contract
 {
-    public static class Extensions
+    public static class ContractExtensions
     {
         public static AccountMarginEventReport ToDto(this IAccountMarginEventReport src)
         {

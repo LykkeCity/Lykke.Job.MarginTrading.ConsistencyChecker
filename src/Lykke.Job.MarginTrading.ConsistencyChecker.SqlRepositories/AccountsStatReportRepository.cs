@@ -6,6 +6,7 @@ using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
@@ -17,6 +18,9 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
         private readonly string _connectionString;
         private readonly ILog _log;
 
+        private string GetColumns =>
+            string.Join(",", typeof(IAccountsStatReport).GetProperties().Select(x => x.Name));
+
         public AccountsStatReportRepository(string connectionString, ILog log)
         {
             _log = log;
@@ -25,18 +29,13 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.SqlRepositories
                 
         public async Task<IEnumerable<IAccountsStatReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo)
         {            
-            var query = $"SELECT" +
-                    " Id, Date, BaseAssetId, AccountId, ClientId, TradingConditionId, Balance, WithdrawTransferLimit, MarginCall, StopOut, TotalCapital, FreeMargin, MarginAvailable, UsedMargin, MarginInit, PnL, OpenPositionsCount, MarginUsageLevel, IsLive" +
+            var query = $"SELECT " + GetColumns +
                     $" FROM {TableName}" +
                     $" WHERE (Date >= @from AND Date <= @to)";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                try { return await conn.QueryAsync<AccountsStatReport>(query,new { from = dtFrom ?? new DateTime(2000,01,01), to = dtTo ?? DateTime.MaxValue }); }
-                catch (Exception ex)
-                {                    
-                    throw ex;
-                }
+                return await conn.QueryAsync<AccountsStatReport>(query,new { from = dtFrom ?? new DateTime(2000,01,01), to = dtTo ?? DateTime.MaxValue }); 
             }
         }
     }
