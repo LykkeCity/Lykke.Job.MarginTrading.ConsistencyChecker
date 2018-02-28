@@ -105,7 +105,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                 if (totalErrors == 0)
                     await _log.WriteInfoAsync("CheckConsistency", null, "Consistency check finished without errors");
                 else
-                    WriteMessage($"Consistency check finished with {totalErrors} errors. Check Date:{currentCheck}", EventTypeEnum.ConsistencyError);
+                    WriteMessage($"Consistency check finished with {totalErrors} errors. Check Date: {currentCheck.ToString("u")}", EventTypeEnum.ConsistencyError);
             }
             catch (Exception ex01)
             {
