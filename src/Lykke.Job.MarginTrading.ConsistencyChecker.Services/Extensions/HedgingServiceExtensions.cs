@@ -35,7 +35,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                         .ToList();
                     if (accountId_coreSymbolRecords.Count != 1)
                     {
-                        throw new System.Exception($"Hedging Service Opened Positions has more than one record for accountId_coreSymbol {accountId}_{coreSymbol}");
+                        result.Add(new HedgingServiceCheckResult
+                        {   
+                            Error = $"Hedging Service Opened Positions has more than one record for accountId_coreSymbol {accountId}_{coreSymbol}"
+                        });
                     }
                     else
                     {

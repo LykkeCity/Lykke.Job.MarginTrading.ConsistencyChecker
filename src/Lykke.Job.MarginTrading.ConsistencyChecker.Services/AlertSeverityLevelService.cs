@@ -1,4 +1,5 @@
-﻿using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
+﻿using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Enums;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings;
 using Lykke.SettingsReader;
 using MoreLinq;

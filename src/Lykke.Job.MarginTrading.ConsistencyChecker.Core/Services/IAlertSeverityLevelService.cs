@@ -1,4 +1,6 @@
-﻿namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services
+﻿using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Enums;
+
+namespace Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services
 {
     public interface IAlertSeverityLevelService
     {
