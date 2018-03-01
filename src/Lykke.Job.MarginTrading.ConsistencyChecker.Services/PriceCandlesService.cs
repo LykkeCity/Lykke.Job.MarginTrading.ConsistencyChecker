@@ -33,14 +33,5 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                 from, to);
             return candleHistory.History.Select(c => c.ToDto());
         }
-        public async Task<IEnumerable<ICandle>> GetHourCandle(string assetPait, bool isAsk, DateTime from, DateTime to)
-        {
-            await _log.WriteInfoAsync("GetHourCandle", null, $"Getting Candles for [{assetPait}] Ask={isAsk} From {from.ToDateTimeCustomString()} To {to.ToDateTimeCustomString()}");
-            var candleHistory = await _candlesClient.GetCandlesHistoryAsync(assetPait,
-                isAsk ? Service.CandlesHistory.Client.Models.CandlePriceType.Ask : Service.CandlesHistory.Client.Models.CandlePriceType.Bid,
-                Service.CandlesHistory.Client.Models.CandleTimeInterval.Hour,
-                from, to);
-            return candleHistory.History.Select(c => c.ToDto());
-        }
     }
 }

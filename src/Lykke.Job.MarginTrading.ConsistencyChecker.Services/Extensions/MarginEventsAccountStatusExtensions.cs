@@ -48,17 +48,19 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
                         MarginEvent = marginEvent,
                         Error = $"No TradingPositions for Margin Event Account Id=[{marginEvent.AccountId}]"
                     });
-                    continue;
                 }
-                var accountOpenPositionsUntilEvent = accountPositions.Where(t => t.CloseDate == null || t.CloseDate > marginEvent.EventTime);
-                var openPositions = accountOpenPositionsUntilEvent.Count();
+                else
+                {
+                    var accountOpenPositionsUntilEvent = accountPositions.Where(t => t.CloseDate == null || t.CloseDate > marginEvent.EventTime);
+                    var openPositions = accountOpenPositionsUntilEvent.Count();
 
-                if (marginEvent.OpenPositionsCount != openPositions)
-                    result.Add(new MarginEventsAccountStatusCheckResult
-                    {
-                        MarginEvent = marginEvent,
-                        Error = $"[open positions delta]={marginEvent.OpenPositionsCount - openPositions}, [marginEvent.OpenPositionsCount]={marginEvent.OpenPositionsCount}, [accountTransaction.openPositions]={openPositions}"
-                    });
+                    if (marginEvent.OpenPositionsCount != openPositions)
+                        result.Add(new MarginEventsAccountStatusCheckResult
+                        {
+                            MarginEvent = marginEvent,
+                            Error = $"[open positions delta]={marginEvent.OpenPositionsCount - openPositions}, [marginEvent.OpenPositionsCount]={marginEvent.OpenPositionsCount}, [accountTransaction.openPositions]={openPositions}"
+                        });
+                }
             }
             return result;
         }

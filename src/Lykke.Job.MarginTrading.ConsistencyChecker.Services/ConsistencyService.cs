@@ -165,10 +165,10 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             result.AddRange(tradingOrders.CheckOrdersDate(tradingPositions));
 
             // OrderType should match the CloseReason for close orders - 
-            //result.AddRange(tradingOrders.CheckOrderTypes(tradingPositions));
+            //TODO: result.AddRange(tradingOrders.CheckOrderTypes(tradingPositions));
 
             // AccountID should match - No AccountId in Orders.. So check may be removed
-            //result.AddRange(tradingOrders.CheckOrderAccountID(tradingPositions));
+            //TODO: result.AddRange(tradingOrders.CheckOrderAccountID(tradingPositions));
 
             // ClientID should match            
             result.AddRange(tradingOrders.CheckOrderClientID(tradingPositions));
@@ -231,32 +231,38 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             } while (currentOpenDay <= maxOpenDate.Date);
 
             // Process Close Price candles 1 day per loop
-            var minCloseDate = allTradingPosition.Min(x => x.CloseDate).Value;
-            var maxCloseDate = allTradingPosition.Max(x => x.CloseDate).Value;
-            var currentCloseDay = minCloseDate.Date;
-            do
-            {
-                var dayEnd = currentCloseDay.AddDays(1).AddMilliseconds(-1);
-                var dayTradingPositions = allTradingPosition
-                    .Where(t => t.CloseDate >= currentCloseDay && t.CloseDate <= dayEnd);
-                var assets = dayTradingPositions.Select(x => x.CoreSymbol)
-                    .Distinct();
-                if (dayTradingPositions.Count() >= 1)
-                {
-                    var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
-                    var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
-                    foreach (var asset in assets)
-                    {
-                        var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, currentCloseDay, dayEnd);
-                        bidCandles.Add(asset, bcandles);
+            var lowerCloseDate = allTradingPosition.Min(x => x.CloseDate);
+            var upperCloseDate = allTradingPosition.Max(x => x.CloseDate);
 
-                        var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, currentCloseDay, dayEnd);
-                        askCandles.Add(asset, acandles);
+            if (upperCloseDate.HasValue && lowerCloseDate.HasValue)
+            {
+                var minCloseDate = lowerCloseDate.Value;
+                var maxCloseDate = lowerCloseDate.Value;
+                var currentCloseDay = minCloseDate.Date;
+                do
+                {
+                    var dayEnd = currentCloseDay.AddDays(1).AddMilliseconds(-1);
+                    var dayTradingPositions = allTradingPosition
+                        .Where(t => t.CloseDate >= currentCloseDay && t.CloseDate <= dayEnd);
+                    var assets = dayTradingPositions.Select(x => x.CoreSymbol)
+                        .Distinct();
+                    if (dayTradingPositions.Count() >= 1)
+                    {
+                        var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                        var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                        foreach (var asset in assets)
+                        {
+                            var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, currentCloseDay, dayEnd);
+                            bidCandles.Add(asset, bcandles);
+
+                            var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, currentCloseDay, dayEnd);
+                            askCandles.Add(asset, acandles);
+                        }
+                        result.AddRange(dayTradingPositions.CheckClosePriceCandlesConsistency(askCandles, bidCandles));
                     }
-                    result.AddRange(dayTradingPositions.CheckClosePriceCandlesConsistency(askCandles, bidCandles));
-                }
-                currentCloseDay = currentCloseDay.AddDays(1);
-            } while (currentCloseDay <= maxCloseDate.Date);
+                    currentCloseDay = currentCloseDay.AddDays(1);
+                } while (currentCloseDay <= maxCloseDate.Date);
+            }
             await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, $"Check finished with {result.Count} errors");
             return result;
         }

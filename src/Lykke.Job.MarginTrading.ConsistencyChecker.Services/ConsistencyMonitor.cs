@@ -1,5 +1,6 @@
 ﻿using Common.Log;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Contract.Models;
+using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Enums;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Repositories;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Services;
 using Lykke.Job.MarginTrading.ConsistencyChecker.Core.Settings.JobSettings;
