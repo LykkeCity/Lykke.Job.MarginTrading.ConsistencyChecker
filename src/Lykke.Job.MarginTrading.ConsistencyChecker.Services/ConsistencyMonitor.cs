@@ -61,7 +61,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
             else
                 _lastCheck = lastCheckResult.DateTo;
 
-            _log.WriteInfo(nameof(ConsistencyMonitor), null, $"Consistency Monitor Started. LastCheck:[{_lastCheck}]");
+            _log.WriteInfo(nameof(ConsistencyMonitor), null, $"Consistency Monitor Started. LastCheck:[{_lastCheck?.ToString("u")}]");
         }
 
         public int MonitorInterval => _monitorInterval;
@@ -70,7 +70,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         public async Task CheckConsistency()
         {
             var currentCheck = DateTime.UtcNow;
-            await _log.WriteInfoAsync("CheckConsistency", null, $"New Consistency Check. Interval:[{_lastCheck}]->[{currentCheck}]");
+            await _log.WriteInfoAsync("CheckConsistency", null, $"New Consistency Check. Interval:[{_lastCheck?.ToString("u")}]->[{currentCheck.ToString("u")}]");
             try
             {
                 var balanceAndTransactionAmount = await _consistencyService.CheckBalanceAndTransactionAmount(_monitorSettings.CheckSql, _lastCheck, currentCheck);

@@ -27,7 +27,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.PeriodicalHandlers
                 initialCall = false;
             else
                 await _monitorService.CheckConsistency();
-            await _log.WriteInfoAsync(nameof(ConsistencyCheckHandler), null, $"Next Consistency Check:[{DateTime.UtcNow.AddMilliseconds(_monitorService.MonitorInterval)}]");
+            await _log.WriteInfoAsync(nameof(ConsistencyCheckHandler), null, $"Next Consistency Check:[{DateTime.UtcNow.AddMilliseconds(_monitorService.MonitorInterval).ToString("u")}]");
         }
     }
 }

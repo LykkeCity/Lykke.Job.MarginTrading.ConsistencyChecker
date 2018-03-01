@@ -38,7 +38,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IBalanceAndTransactionAmountCheckResult>> CheckBalanceAndTransactionAmount(bool isSql, DateTime? from, DateTime? to)
         {
-            await _log.WriteInfoAsync("CheckBalanceAndTransactionAmount", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckBalanceAndTransactionAmount", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
             var accountStatsRepo = _repositoryManager.GetAccountsStatReport(isSql);
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
 
@@ -66,7 +66,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IBalanceAndOrderClosedCheckResult>> CheckBalanceAndOrderClosed(bool isSql, DateTime? from, DateTime? to)
         {            
-            await _log.WriteInfoAsync("CheckBalanceAndOrderClosed", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckBalanceAndOrderClosed", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
 
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
@@ -113,7 +113,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IHedgingServiceCheckResult>> CheckHedgingService(bool isSql, DateTime? from, DateTime? to)
         {
-            await _log.WriteInfoAsync("CheckHedgingService", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckHedgingService", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var hedgingServicePositionsClosed = (await tradingPositionRepo.GetClosedAsync(from, to))
@@ -141,7 +141,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IOrdersReportAndOrderClosedOpenedCheckResult>> CheckOrdersReportAndOrderClosedOpened(bool isSql, DateTime? from, DateTime? to)
         {
-            await _log.WriteInfoAsync("CheckOrdersReportAndOrderClosedOpened", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckOrdersReportAndOrderClosedOpened", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
 
             var tradingOrdersReportRepo = _repositoryManager.GetTradingOrder(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
@@ -186,7 +186,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IPriceCandlesConsistencyResult>> CheckCandlesPriceConsistency(bool isSql, DateTime? from, DateTime? to)
         {
-            await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckCandlesPriceConsistency", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to))
@@ -270,7 +270,7 @@ namespace Lykke.Job.MarginTrading.ConsistencyChecker.Services
         /// <returns></returns>
         public async Task<IEnumerable<IMarginEventsAccountStatusCheckResult>> CheckMarginEventsAccountStatus(bool isSql, DateTime? from, DateTime? to)
         {
-            await _log.WriteInfoAsync("CheckMarginEventsAccountStatus", null, $"Started Check IsSql={isSql} From [{from}] To [{to}]");
+            await _log.WriteInfoAsync("CheckMarginEventsAccountStatus", null, $"Started Check IsSql={isSql} From [{from?.ToString("u")}] To [{to?.ToString("u")}]");
             var marginEventsRepo = _repositoryManager.GetAccountMarginEventReport(isSql);
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
