@@ -1,8 +1,7 @@
-﻿using Common.Log;
-using Dapper;
+﻿using Dapper;
 using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Models;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
+using Lykke.Job.MtConsistencyChecker.SqlRepositories.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -14,28 +13,30 @@ namespace Lykke.Job.MtConsistencyChecker.SqlRepositories
     public class AccountMarginEventReportRepository : IAccountMarginEventReportRepository
     {
         private const string TableName = "AccountMarginEventsReports";
-        
-        private readonly string _connectionString;
-        private readonly ILog _log;
 
-        private string GetColumns =>
+        private readonly string _connectionString;
+
+        private static string GetColumns =>
             string.Join(",", typeof(IAccountMarginEventReport).GetProperties().Select(x => x.Name));
 
-        public AccountMarginEventReportRepository(string connectionString, ILog log)
+        public AccountMarginEventReportRepository(string connectionString)
         {
-            _log = log;
             _connectionString = connectionString;
         }
 
         public async Task<IEnumerable<IAccountMarginEventReport>> GetAsync(DateTime? dtFrom, DateTime? dtTo)
-        {   
-            var query = $"SELECT " + GetColumns +
-                    $" FROM {TableName}" +
-                    $" WHERE (EventTime >= @from AND EventTime <= @to)";
+        {
+            var query = "SELECT " + GetColumns +
+                        $" FROM {TableName}" +
+                        " WHERE (EventTime >= @from AND EventTime <= @to)";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                return await conn.QueryAsync<AccountMarginEventReport>(query, new { from = dtFrom ?? new DateTime(2000, 01, 01), to = dtTo ?? DateTime.MaxValue });
+                return await conn.QueryAsync<AccountMarginEventReportEntity>(query, new
+                {
+                    from = dtFrom ?? new DateTime(2000, 01, 01),
+                    to = dtTo ?? DateTime.MaxValue
+                });
             }
         }
     }

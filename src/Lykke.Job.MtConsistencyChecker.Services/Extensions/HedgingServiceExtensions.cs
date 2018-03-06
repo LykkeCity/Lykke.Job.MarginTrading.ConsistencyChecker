@@ -1,9 +1,10 @@
-﻿using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lykke.Job.MtConsistencyChecker.Contract;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
 
-namespace Lykke.Job.MtConsistencyChecker.Services
+namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
 {
     internal static class HedgingServiceExtensions
     {
@@ -19,21 +20,22 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<HedgingServiceCheckResult> CheckHedgingServicePositionsVolume(this IEnumerable<ITradingPosition> hedgingServicePositionsOpened, IEnumerable<ITradingPosition> hedgingServicePositionsClosed)
         {
             var result = new List<HedgingServiceCheckResult>();
-
-            var accountIds = hedgingServicePositionsOpened.Select(x => x.TakerAccountId)
+            var openedList = hedgingServicePositionsOpened.ToList();
+            var accountIds = openedList.Select(x => x.TakerAccountId)
                 .Distinct();
 
+            var closedList = hedgingServicePositionsClosed.ToList();
             foreach (var accountId in accountIds)
             {
-                var coreSymbols = hedgingServicePositionsOpened
+                var coreSymbols = openedList
                     .Where(a => a.TakerAccountId == accountId)
                     .Select(x => x.CoreSymbol)
                     .Distinct();
                 foreach (var coreSymbol in coreSymbols)
                 {
-                    var accountId_coreSymbolRecords = hedgingServicePositionsOpened.Where(a => a.TakerAccountId == accountId && a.CoreSymbol == coreSymbol)
+                    var accountIdCoreSymbolRecords = openedList.Where(a => a.TakerAccountId == accountId && a.CoreSymbol == coreSymbol)
                         .ToList();
-                    if (accountId_coreSymbolRecords.Count != 1)
+                    if (accountIdCoreSymbolRecords.Count != 1)
                     {
                         result.Add(new HedgingServiceCheckResult
                         {   
@@ -42,19 +44,19 @@ namespace Lykke.Job.MtConsistencyChecker.Services
                     }
                     else
                     {
-                        var accountId_coreSymbol_volume = accountId_coreSymbolRecords.First().Volume;
-                        var lastClosed = hedgingServicePositionsClosed
+                        var accountIdCoreSymbolVolume = accountIdCoreSymbolRecords.First().Volume;
+                        var lastClosed = closedList
                             .Where(a => a.TakerAccountId == accountId && a.CoreSymbol == coreSymbol)
                             .OrderByDescending(p => p.CloseDate)
                             .Take(2)
                             .ToArray();
-                        var accountId_coreSymbol_closedVolume = lastClosed[0].Volume - lastClosed[1].Volume;
-                        if (accountId_coreSymbol_volume != accountId_coreSymbol_closedVolume)
+                        var accountIdCoreSymbolClosedVolume = lastClosed[0].Volume - lastClosed[1].Volume;
+                        if (Math.Abs(accountIdCoreSymbolVolume - accountIdCoreSymbolClosedVolume) > Double.Epsilon)
                         {
                             result.Add(new HedgingServiceCheckResult
                             {
-                                OpenPosition = accountId_coreSymbolRecords.First(),
-                                Error = $"[delta]={accountId_coreSymbol_volume - accountId_coreSymbol_closedVolume}, [OpenPosition.Volume]={accountId_coreSymbol_volume}, [ClosePositions.VolumeDiff]={accountId_coreSymbol_closedVolume}"
+                                OpenPosition = accountIdCoreSymbolRecords.First(),
+                                Error = $"[delta]={accountIdCoreSymbolVolume - accountIdCoreSymbolClosedVolume}, [OpenPosition.Volume]={accountIdCoreSymbolVolume}, [ClosePositions.VolumeDiff]={accountIdCoreSymbolClosedVolume}"
                             });
                         }
                     }

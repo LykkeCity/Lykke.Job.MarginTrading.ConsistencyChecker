@@ -76,8 +76,8 @@ namespace Lykke.Job.MtConsistencyChecker
 
         private void RegisterModules(ContainerBuilder builder, IReloadingManager<AppSettings> settings, ILog log)
         {
-            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.MtConsistencyCheckerJob.Db), Log));
-            builder.RegisterModule(new JobModule(settings.CurrentValue.MtConsistencyCheckerJob, settings.Nested(x => x.RiskInformingSettings), Log));
+            builder.RegisterModule(new RepositoryModule(settings.Nested(x => x.MtConsistencyCheckerJob.Db), log));
+            builder.RegisterModule(new JobModule(settings.CurrentValue.MtConsistencyCheckerJob, settings.Nested(x => x.RiskInformingSettings)));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime appLifetime)

@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Common.Log;
 using Lykke.Job.MtConsistencyChecker.Core.Services;
 using Lykke.Job.MtConsistencyChecker.Core.Settings;
 using Lykke.Job.MtConsistencyChecker.Core.Settings.JobSettings;
@@ -15,14 +14,12 @@ namespace Lykke.Job.MtConsistencyChecker.Modules
     {
         private readonly ConsistencyCheckerSettings _settings;
         private readonly IReloadingManager<RiskInformingSettings> _riskInformingSettingsManager;
-        private readonly ILog _log;
         private readonly IServiceCollection _services;
 
-        public JobModule(ConsistencyCheckerSettings settings,  IReloadingManager<RiskInformingSettings> riskInformingSettingsManager, ILog log)
+        public JobModule(ConsistencyCheckerSettings settings,  IReloadingManager<RiskInformingSettings> riskInformingSettingsManager)
         {
             _settings = settings;
             _riskInformingSettingsManager = riskInformingSettingsManager;
-            _log = log;
             _services = new ServiceCollection();
         }
 
@@ -36,7 +33,7 @@ namespace Lykke.Job.MtConsistencyChecker.Modules
 
             builder.RegisterType<AlertSeverityLevelService>()
                .As<IAlertSeverityLevelService>()
-               .WithParameter(TypedParameter.From(_riskInformingSettingsManager))
+               .WithParameter(TypedParameter.From(_riskInformingSettingsManager.CurrentValue))
                .SingleInstance();
             
             builder.RegisterType<HealthService>()

@@ -24,7 +24,7 @@ namespace Lykke.Job.MtConsistencyChecker.AzureRepositories.Entities
         private static BalanceAndOrderClosedCheckResultEntity Create(IBalanceAndOrderClosedCheckResult src, DateTime checkDate, int index)
         {
             var partitionKey = checkDate.ToString("yyyyMMdd_HHmm");
-            var rowKey = $"{partitionKey}_{index.ToString("0000")}";
+            var rowKey = $"{partitionKey}_{index:0000}";
             return new BalanceAndOrderClosedCheckResultEntity
             {
                 PartitionKey = partitionKey,

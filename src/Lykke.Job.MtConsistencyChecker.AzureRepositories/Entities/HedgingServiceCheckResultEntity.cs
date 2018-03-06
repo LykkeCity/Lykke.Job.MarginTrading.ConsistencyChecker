@@ -22,7 +22,7 @@ namespace Lykke.Job.MtConsistencyChecker.AzureRepositories.Entities
         private static HedgingServiceCheckResultEntity Create(IHedgingServiceCheckResult src, DateTime checkDate, int index)
         {
             var partitionKey = checkDate.ToString("yyyyMMdd_HHmm");
-            var rowKey = $"{partitionKey}_{index.ToString("0000")}";
+            var rowKey = $"{partitionKey}_{index:0000}";
             return new HedgingServiceCheckResultEntity
             {
                 PartitionKey = partitionKey,

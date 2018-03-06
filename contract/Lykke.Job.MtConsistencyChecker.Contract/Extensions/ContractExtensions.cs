@@ -1,6 +1,6 @@
 ﻿using Lykke.Job.MtConsistencyChecker.Contract.Models;
 
-namespace Lykke.Job.MtConsistencyChecker.Contract
+namespace Lykke.Job.MtConsistencyChecker.Contract.Extensions
 {
     public static class ContractExtensions
     {

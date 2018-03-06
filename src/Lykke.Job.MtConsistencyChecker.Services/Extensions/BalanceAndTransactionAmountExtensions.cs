@@ -1,9 +1,9 @@
-﻿using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Lykke.Job.MtConsistencyChecker.Contract;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
 
-namespace Lykke.Job.MtConsistencyChecker.Services
+namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
 {
     internal static class BalanceAndTransactionAmountExtensions
     {
@@ -31,9 +31,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndTransactionAmountCheckResult> CheckBalanceTransactions(this IEnumerable<IAccountsStatReport> accountStats, IEnumerable<IAccountTransactionsReport> accountTransaction)
         {
             var result = new List<BalanceAndTransactionAmountCheckResult>();
+            var accountTransactionsReports = accountTransaction.ToList();
             foreach (var stat in accountStats)
             {
-                var total = accountTransaction.Where(t => t.AccountId == stat.AccountId)
+                var total = accountTransactionsReports.Where(t => t.AccountId == stat.AccountId)
                     .Sum(x => x.Amount);
                 if (stat.Balance != total)
                 {

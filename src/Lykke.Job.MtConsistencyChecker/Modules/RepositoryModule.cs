@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using Common.Log;
-using Lykke.Job.MtConsistencyChecker.AzureRepositories;
+using Lykke.Job.MtConsistencyChecker.AzureRepositories.Results;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
 using Lykke.Job.MtConsistencyChecker.Core.Services;
 using Lykke.Job.MtConsistencyChecker.Core.Settings.JobSettings;
@@ -27,17 +27,17 @@ namespace Lykke.Job.MtConsistencyChecker.Modules
 
             builder.RegisterInstance(new RepositoryManager(
                 new AzureRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
-                new SqlRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new SqlRepositories.AccountMarginEventReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue),
                 new AzureRepositories.AccountsReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
-                new SqlRepositories.AccountsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new SqlRepositories.AccountsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue),
                 new AzureRepositories.AccountsStatReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
-                new SqlRepositories.AccountsStatReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new SqlRepositories.AccountsStatReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue),
                 new AzureRepositories.AccountTransactionsReportRepository(_dbSettings.Nested(x => x.ReportsConnString), _log),
-                new SqlRepositories.AccountTransactionsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new SqlRepositories.AccountTransactionsReportRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue),
                 null,
-                new SqlRepositories.TradingPositionRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log),
+                new SqlRepositories.TradingPositionRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue),
                 new AzureRepositories.TradingOrderRepository(_dbSettings.Nested(x => x.ReportsSqlConnString), _log),
-                new SqlRepositories.TradingOrderRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue, _log)
+                new SqlRepositories.TradingOrderRepository(_dbSettings.Nested(x => x.ReportsSqlConnString).CurrentValue)
 
                 ))
                 .As<IRepositoryManager>()
