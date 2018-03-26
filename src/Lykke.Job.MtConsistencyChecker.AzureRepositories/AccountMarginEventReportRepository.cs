@@ -4,13 +4,14 @@ using Common.Log;
 using Lykke.Job.MtConsistencyChecker.AzureRepositories.Entities;
 using Lykke.Job.MtConsistencyChecker.Contract;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
-using Lykke.Job.MtConsistencyChecker.Core.Settings.JobSettings;
 using Lykke.SettingsReader;
 using Microsoft.WindowsAzure.Storage.Table;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MoreLinq;
 
 namespace Lykke.Job.MtConsistencyChecker.AzureRepositories
 {
@@ -33,13 +34,10 @@ namespace Lykke.Job.MtConsistencyChecker.AzureRepositories
 
         private async Task<IEnumerable<string>> GetPartitionKeys()
         {
-            System.Collections.Concurrent.ConcurrentDictionary<string, byte> partitionKeys = new System.Collections.Concurrent.ConcurrentDictionary<string, byte>();
+            var partitionKeys = new ConcurrentBag<string>();
             await _tableStorage.ExecuteAsync(new TableQuery<AccountMarginEventReportEntity>(), entity =>
-            {
-                foreach (var et in entity.Select(m => m.PartitionKey))
-                    partitionKeys.TryAdd(et, 0);
-            });
-            return partitionKeys.Select(m => m.Key);
+                entity.Select(m => m.PartitionKey).ForEach(pk => partitionKeys.Add(pk)));
+            return partitionKeys.Distinct();
         }
     }
 }

@@ -17,7 +17,6 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         private readonly IConsistencyService _consistencyService;
         private readonly IMtSlackNotificationsSender _slackNotificationsSender;
         private readonly MonitorSettings _monitorSettings;
-        private readonly int _monitorInterval;
         private readonly ICheckResultRepository _checkResultRepository;
         private readonly IBalanceAndTransactionAmountRepository _balanceAndTransactionAmountRepository;
         private readonly IBalanceAndOrderClosedRepository _balanceAndOrderClosedRepository;
@@ -26,8 +25,6 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         private readonly IMarginEventsAccountStatusRepository _marginEventsAccountStatusRepository;
         private readonly IHedgingServiceRepository _hedgingServiceRepository;
         private readonly IAlertSeverityLevelService _alertSeverityLevelService;
-
-        DateTime? _lastCheck;
 
         public ConsistencyMonitor (MonitorSettings monitorSettings, 
             IConsistencyService consistencyService,
@@ -45,7 +42,7 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             _log = log;
             _monitorSettings = monitorSettings;
             _consistencyService = consistencyService;
-            _monitorInterval = _monitorSettings.ConsistencyCheckInterval;
+            MonitorInterval = _monitorSettings.ConsistencyCheckInterval;
             _checkResultRepository = checkResultRepository;
             _balanceAndTransactionAmountRepository = balanceAndTransactionAmountRepository;
             _balanceAndOrderClosedRepository = balanceAndOrderClosedRepository;
@@ -58,61 +55,91 @@ namespace Lykke.Job.MtConsistencyChecker.Services
 
             var lastCheckResult = Task.Run(async () => await _checkResultRepository.GetLastAsync()).Result;
             if (lastCheckResult == null)
-                _lastCheck = null;
+                LastCheck = null;
             else
-                _lastCheck = lastCheckResult.DateTo;
+                LastCheck = lastCheckResult.DateTo;
 
-            _log.WriteInfo(nameof(ConsistencyMonitor), null, $"Consistency Monitor Started. LastCheck:[{_lastCheck?.ToString("u")}]");
+            _log.WriteInfo(nameof(ConsistencyMonitor), null, $"Consistency Monitor Started. LastCheck:[{LastCheck?.ToString("u")}]");
         }
 
-        public int MonitorInterval => _monitorInterval;
-        public DateTime? LastCheck => _lastCheck;
+        public int MonitorInterval { get; }
+
+        public DateTime? LastCheck { get; private set; }
 
         public async Task CheckConsistency()
         {
             var currentCheck = DateTime.UtcNow;
-            await _log.WriteInfoAsync("CheckConsistency", null, $"New Consistency Check. Interval:[{_lastCheck?.ToString("u")}]->[{currentCheck.ToString("u")}]");
+            await _log.WriteInfoAsync("CheckConsistency", null, $"New Consistency Check. Interval:[{LastCheck?.ToString("u")}]->[{currentCheck:u}]");
+            var totalErrors = 0;
             try
             {
-                var balanceAndTransactionAmount = await _consistencyService.CheckBalanceAndTransactionAmount(_monitorSettings.CheckSql, _lastCheck, currentCheck);
+                var balanceAndTransactionAmount = (await _consistencyService.CheckBalanceAndTransactionAmount(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += balanceAndTransactionAmount.Count;
                 await _balanceAndTransactionAmountRepository.AddAsync(balanceAndTransactionAmount, currentCheck);
-
-                var balanceAndOrderClosed = await _consistencyService.CheckBalanceAndOrderClosed(_monitorSettings.CheckSql, _lastCheck, currentCheck);
-                await _balanceAndOrderClosedRepository.AddAsync(balanceAndOrderClosed, currentCheck);
-
-                var ordersReportAndOrderClosedOpened = await _consistencyService.CheckOrdersReportAndOrderClosedOpened(_monitorSettings.CheckSql, _lastCheck, currentCheck);
-                await _ordersReportAndOrderClosedOpenedRepository.AddAsync(ordersReportAndOrderClosedOpened, currentCheck);
-
-                var candlesPriceConsistency = await _consistencyService.CheckCandlesPriceConsistency(_monitorSettings.CheckSql, _lastCheck, currentCheck);
-                await _priceCandlesConsistencyRepository.AddAsync(candlesPriceConsistency, currentCheck);
-
-                var marginEventsAccountStatus = await _consistencyService.CheckMarginEventsAccountStatus(_monitorSettings.CheckSql, _lastCheck, currentCheck);
-                await _marginEventsAccountStatusRepository.AddAsync(marginEventsAccountStatus, currentCheck);
-
-                var hedgingServiceVolume = await _consistencyService.CheckHedgingService(_monitorSettings.CheckSql, _lastCheck, currentCheck);
-                await _hedgingServiceRepository.AddAsync(hedgingServiceVolume, currentCheck);
-
-                var totalErrors = balanceAndTransactionAmount.Count() + balanceAndOrderClosed.Count() + ordersReportAndOrderClosedOpened.Count() +
-                    candlesPriceConsistency.Count() + marginEventsAccountStatus.Count() + hedgingServiceVolume.Count();
-                await _checkResultRepository.AddAsync(new CheckResult
-                {
-                    Date = currentCheck,
-                    DateFrom = _lastCheck ?? new DateTime(2000,01,01),
-                    DateTo = currentCheck,
-                    Comments = $"Check finished with {totalErrors} errors"
-                });
-                _lastCheck = currentCheck;
-
-
-                if (totalErrors == 0)
-                    await _log.WriteInfoAsync("CheckConsistency", null, "Consistency check finished without errors");
-                else
-                    WriteMessage($"Consistency check finished with {totalErrors} errors. Check Date: {currentCheck.ToString("u")}", EventTypeEnum.ConsistencyError);
             }
-            catch (Exception ex01)
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+
+            try
             {
-                await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01);
+                var balanceAndOrderClosed = (await _consistencyService.CheckBalanceAndOrderClosed(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += balanceAndOrderClosed.Count;
+                await _balanceAndOrderClosedRepository.AddAsync(balanceAndOrderClosed, currentCheck);
             }
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+
+            try
+            {
+                var ordersReportAndOrderClosedOpened = (await _consistencyService.CheckOrdersReportAndOrderClosedOpened(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += ordersReportAndOrderClosedOpened.Count;
+                await _ordersReportAndOrderClosedOpenedRepository.AddAsync(ordersReportAndOrderClosedOpened, currentCheck);
+            }
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+
+            try
+            {
+                var candlesPriceConsistency = (await _consistencyService.CheckCandlesPriceConsistency(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += candlesPriceConsistency.Count;
+                await _priceCandlesConsistencyRepository.AddAsync(candlesPriceConsistency, currentCheck);
+            }
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+            try
+            {
+                var marginEventsAccountStatus = (await _consistencyService.CheckMarginEventsAccountStatus(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += marginEventsAccountStatus.Count;
+                await _marginEventsAccountStatusRepository.AddAsync(marginEventsAccountStatus, currentCheck);
+            }
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+
+            try
+            {
+                var hedgingServiceVolume = (await _consistencyService.CheckHedgingService(_monitorSettings.CheckSql, LastCheck, currentCheck))
+                    .ToList();
+                totalErrors += hedgingServiceVolume.Count;
+                await _hedgingServiceRepository.AddAsync(hedgingServiceVolume, currentCheck);
+            }
+            catch (Exception ex01) { await _log.WriteErrorAsync(nameof(CheckConsistency), null, ex01); }
+
+
+            await _checkResultRepository.AddAsync(new CheckResult
+            {
+                Date = currentCheck,
+                DateFrom = LastCheck ?? new DateTime(2000, 01, 01),
+                DateTo = currentCheck,
+                Comments = $"Check finished with {totalErrors} errors"
+            });
+            LastCheck = currentCheck;
+
+
+            if (totalErrors == 0)
+                await _log.WriteInfoAsync("CheckConsistency", null, "Consistency check finished without errors");
+            else
+                WriteMessage($"Consistency check finished with {totalErrors} errors. Check Date: {currentCheck:u}", EventTypeEnum.ConsistencyError);
+
         }
 
         private void WriteMessage(string message, EventTypeEnum eventType)

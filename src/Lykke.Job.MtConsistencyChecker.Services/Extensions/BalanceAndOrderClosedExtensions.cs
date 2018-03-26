@@ -1,9 +1,9 @@
-﻿using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Lykke.Job.MtConsistencyChecker.Contract;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
 
-namespace Lykke.Job.MtConsistencyChecker.Services
+namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
 {
     internal static class BalanceAndOrderClosedExtensions
     {
@@ -17,18 +17,20 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndOrderClosedCheckResult> CheckTransactionCount(this IEnumerable<ITradingPosition> tradingPositionsClosed, IEnumerable<IAccountTransactionsReport> accountTransactions)
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
+            var accountTransactionsReports = accountTransactions.ToList();
             foreach (var position in tradingPositionsClosed)
             {
-                var closedAccountTransactions = accountTransactions
-                   .Where(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                var closedAccountTransactions = accountTransactionsReports
+                   .Where(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed")
+                    .ToList();
 
-                var numberOfTransactions = closedAccountTransactions.Count();
+                var numberOfTransactions = closedAccountTransactions.Count;
                 if (numberOfTransactions < 1)
                 {
                     result.Add(new BalanceAndOrderClosedCheckResult
                     {
                         TradingPosition = position,
-                        Error = $"Orphaned TradingPositionClosed"
+                        Error = "Orphaned TradingPositionClosed"
                     });
                 }
                 else if (numberOfTransactions > 1)
@@ -52,16 +54,17 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndOrderClosedCheckResult> CheckTransactionPnL(this IEnumerable<ITradingPosition> tradingPositionsClosed, IEnumerable<IAccountTransactionsReport> accountTransactions)
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
+            var accountTransactionsReports = accountTransactions.ToList();
             foreach (var position in tradingPositionsClosed)
             {
-                var transaction = accountTransactions
+                var transaction = accountTransactionsReports
                     .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
-                if (transaction.Amount != position.PnL)
+                if (transaction?.Amount != position.PnL)
                     result.Add(new BalanceAndOrderClosedCheckResult
                     {
                         TradingPosition = position,
                         AccountTransaction = transaction,
-                        Error = $"delta=[{transaction.Amount - position.PnL}] transaction.Amount=[{transaction.Amount}], position.PnL=[{position.PnL}]"
+                        Error = $"delta=[{transaction?.Amount - position.PnL}] transaction.Amount=[{transaction?.Amount}], position.PnL=[{position.PnL}]"
                     });
             }
             return result;
@@ -76,17 +79,18 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndOrderClosedCheckResult> CheckClientId(this IEnumerable<ITradingPosition> tradingPositionsClosed, IEnumerable<IAccountTransactionsReport> accountTransactions)
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
+            var accountTransactionsReports = accountTransactions.ToList();
             foreach (var position in tradingPositionsClosed)
-            {
-                var transaction = accountTransactions
+            {   
+                var transaction = accountTransactionsReports
                     .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
 
-                if (transaction.ClientId != position.TakerCounterpartyId)
+                if (transaction?.ClientId != position.TakerCounterpartyId)
                     result.Add(new BalanceAndOrderClosedCheckResult
                     {
                         TradingPosition = position,
                         AccountTransaction = transaction,
-                        Error = $"ClientID doesn't match  transaction.ClientId=[{transaction.ClientId}], position.TakerCounterpartyId=[{position.TakerCounterpartyId}]"
+                        Error = $"ClientID doesn't match  transaction.ClientId=[{transaction?.ClientId}], position.TakerCounterpartyId=[{position.TakerCounterpartyId}]"
                     });
             }
             return result;
@@ -101,17 +105,19 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndOrderClosedCheckResult> CheckAccountId(this IEnumerable<ITradingPosition> tradingPositionsClosed, IEnumerable<IAccountTransactionsReport> accountTransactions)
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
+            var accountTransactionsReports = accountTransactions.ToList();
             foreach (var position in tradingPositionsClosed)
             {
-                var transaction = accountTransactions
-                    .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                var transaction = accountTransactionsReports
+                    .First(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
 
                 if (transaction.AccountId != position.TakerAccountId)
                     result.Add(new BalanceAndOrderClosedCheckResult
                     {
                         TradingPosition = position,
                         AccountTransaction = transaction,
-                        Error = $"AccountID doesn't match  transaction.AccountId=[{transaction.AccountId}], position.TakerAccountId=[{position.TakerAccountId}]"
+                        Error =
+                            $"AccountID doesn't match  transaction.AccountId=[{transaction.AccountId}], position.TakerAccountId=[{position.TakerAccountId}]"
                     });
             }
             return result;
@@ -126,10 +132,11 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<BalanceAndOrderClosedCheckResult> CheckDate(this IEnumerable<ITradingPosition> tradingPositionsClosed, IEnumerable<IAccountTransactionsReport> accountTransactions)
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
+            var accountTransactionsReports = accountTransactions.ToList();
             foreach (var position in tradingPositionsClosed)
             {
-                var transaction = accountTransactions
-                    .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                var transaction = accountTransactionsReports
+                    .First(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
                 var dateDelta = transaction.Date - position.Date;
                 if (dateDelta.TotalMinutes < -1 || dateDelta.TotalMinutes > 1)
                     result.Add(new BalanceAndOrderClosedCheckResult
@@ -154,9 +161,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         {
             var result = new List<BalanceAndOrderClosedCheckResult>();
             var closedTransactions = accountTransactions.Where(t => t.Type == "OrderClosed");
+            var tradingPositions = tradingPositionsClosed.ToList();
             foreach (var transaction in closedTransactions)
             {
-                var positions = tradingPositionsClosed.Where(p => p.TakerPositionId == transaction.PositionId);
+                var positions = tradingPositions.Where(p => p.TakerPositionId == transaction.PositionId);
                 var numberOfpositions = positions.Count();
                 if (numberOfpositions < 1)
                     result.Add(new BalanceAndOrderClosedCheckResult

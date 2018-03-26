@@ -1,13 +1,13 @@
-﻿using Common.Log;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
-using Lykke.Job.MtConsistencyChecker.Core.Services;
-using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Common.Log;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
+using Lykke.Job.MtConsistencyChecker.Core.Services;
+using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Job.MtConsistencyChecker.Controllers
 {
@@ -36,10 +36,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckBalanceAndTransactionAmount(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckBalanceAndTransactionAmount(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
 
         /// <summary>
@@ -54,10 +53,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckBalanceAndOrderClosed(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService. CheckBalanceAndOrderClosed(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
 
         /// <summary>
@@ -72,10 +70,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckOrdersReportAndOrderClosedOpened(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckOrdersReportAndOrderClosedOpened(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
 
         /// <summary>
@@ -90,10 +87,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckCandlesPriceConsistency(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckCandlesPriceConsistency(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
 
   
@@ -109,10 +105,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckMarginEventsAccountStatus(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckMarginEventsAccountStatus(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
 
 
@@ -128,10 +123,9 @@ namespace Lykke.Job.MtConsistencyChecker.Controllers
         public async Task<IActionResult> CheckHedgingService(DateTime? dateFrom, DateTime? dateTo)
         {
             var res = await _consistencyService.CheckHedgingService(true, dateFrom, dateTo);
-            if (res.Count() == 0)
+            if (!res.Any())
                 return Ok("OK");
-            else
-                return Ok(res);
+            return Ok(res);
         }
     }
 }

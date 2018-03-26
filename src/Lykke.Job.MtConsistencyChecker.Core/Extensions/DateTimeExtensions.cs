@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Lykke.Job.MtConsistencyChecker.Core
+namespace Lykke.Job.MtConsistencyChecker.Core.Extensions
 {
     public static class DateTimeExtensions
     {

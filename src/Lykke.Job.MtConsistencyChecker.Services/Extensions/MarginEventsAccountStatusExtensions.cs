@@ -1,9 +1,9 @@
-﻿using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Lykke.Job.MtConsistencyChecker.Contract;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
 
-namespace Lykke.Job.MtConsistencyChecker.Services
+namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
 {
     public static class MarginEventsAccountStatusExtensions
     {
@@ -16,10 +16,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         public static IEnumerable<MarginEventsAccountStatusCheckResult> CheckBalanceTransactions(this IEnumerable<IAccountMarginEventReport> marginEvents, IEnumerable<IAccountTransactionsReport> accountTransaction)
         {
             var result = new List<MarginEventsAccountStatusCheckResult>();
-
+            var accountTransactionsReports = accountTransaction.ToList();
             foreach (var marginEvent in marginEvents.OrderBy(e => e.EventTime))
             {
-                var transactionsUntilEvent = accountTransaction
+                var transactionsUntilEvent = accountTransactionsReports
                     .Where(t => t.AccountId == marginEvent.AccountId && t.Date <= marginEvent.EventTime)
                     .OrderBy(t => t.Date);
                 var balance = transactionsUntilEvent.Sum(x => x.Amount);
@@ -36,12 +36,13 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         public static IEnumerable<MarginEventsAccountStatusCheckResult> CheckOpenPositions(this IEnumerable<IAccountMarginEventReport> marginEvents, IEnumerable<ITradingPosition> tradingPositions)
         {
             var result = new List<MarginEventsAccountStatusCheckResult>();
-
+            var positions = tradingPositions.ToList();
             foreach (var marginEvent in marginEvents.OrderBy(e => e.EventTime))
             {
-                var accountPositions = tradingPositions.Where(t => t.TakerAccountId == marginEvent.AccountId)                        
-                    .OrderBy(t => t.Date);
-                if (accountPositions.Count() < 1)
+                var accountPositions = positions.Where(t => t.TakerAccountId == marginEvent.AccountId)
+                    .OrderBy(t => t.Date)
+                    .ToList();
+                if (accountPositions.Any())
                 {
                     result.Add(new MarginEventsAccountStatusCheckResult
                     {

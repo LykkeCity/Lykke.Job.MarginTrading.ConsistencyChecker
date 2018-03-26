@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Lykke.Job.MtConsistencyChecker.Services.Extensions;
+using Lykke.Job.MtConsistencyChecker.Core.Domain;
 
 namespace Lykke.Job.MtConsistencyChecker.Services
 {
@@ -19,6 +21,7 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         /// Default constructor
         /// </summary>
         /// <param name="repositoryManager">IRepositoryManager object</param>
+        /// <param name="priceCandlesService">PriceCandles Service</param>
         /// <param name="log">ILog object</param>
         public ConsistencyService(IRepositoryManager repositoryManager,
             IPriceCandlesService priceCandlesService,
@@ -42,8 +45,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             var accountStatsRepo = _repositoryManager.GetAccountsStatReport(isSql);
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
 
-            var accountStats = await accountStatsRepo.GetAsync(from, to);
-            var accountTransaction = await accountTransactionRepo.GetAsync(from, to);
+            var accountStats = (await accountStatsRepo.GetAsync(from, to))
+                .ToList();
+            var accountTransaction = (await accountTransactionRepo.GetAsync(from, to))
+                .ToList();
 
             var result = new List<BalanceAndTransactionAmountCheckResult>();
 
@@ -71,10 +76,12 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
-            var accountTransactions = await accountTransactionRepo.GetAsync(from, to);
+            var accountTransactions = (await accountTransactionRepo.GetAsync(from, to))
+                .ToList();
             // TradePositionReportClosed records with Counterparty ID = LykkeHedgingService should be excluded from the check
             var tradingPositionsClosed = (await tradingPositionRepo.GetClosedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService");
+                .Where(m => m.TakerCounterpartyId != Constants.HedgingServiceName)
+                .ToList();
 
             var result = new List<BalanceAndOrderClosedCheckResult>();
 
@@ -117,10 +124,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var hedgingServicePositionsClosed = (await tradingPositionRepo.GetClosedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId == "LykkeHedgingService");
+                .Where(m => m.TakerCounterpartyId == Constants.HedgingServiceName);
 
             var hedgingServicePositionsOpened = (await tradingPositionRepo.GetOpenedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId == "LykkeHedgingService");
+                .Where(m => m.TakerCounterpartyId == Constants.HedgingServiceName);
 
             var result = new List<HedgingServiceCheckResult>();
 
@@ -148,12 +155,15 @@ namespace Lykke.Job.MtConsistencyChecker.Services
 
             // Ignore LykkeHedgingService
             var tradingOrders = (await tradingOrdersReportRepo.GetAsync(from, to))
-                .Where(x => x.TakerCounterpartyId != "LykkeHedgingService");
+                .Where(x => x.TakerCounterpartyId != Constants.HedgingServiceName)
+                .ToList();
             var tradingPositions = new List<ITradingPosition>();
             tradingPositions.AddRange((await tradingPositionRepo.GetClosedAsync(from, to))
-                .Where(x => x.TakerCounterpartyId != "LykkeHedgingService"));
+                .Where(x => x.TakerCounterpartyId != Constants.HedgingServiceName)
+                .ToList());
             tradingPositions.AddRange((await tradingPositionRepo.GetOpenedAsync(from, to))
-                .Where(x => x.TakerCounterpartyId != "LykkeHedgingService"));
+                .Where(x => x.TakerCounterpartyId != Constants.HedgingServiceName)
+                .ToList());
 
             var result = new List<OrdersReportAndOrderClosedOpenedCheckResult>();
 
@@ -171,7 +181,7 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             //TODO: result.AddRange(tradingOrders.CheckOrderAccountID(tradingPositions));
 
             // ClientID should match            
-            result.AddRange(tradingOrders.CheckOrderClientID(tradingPositions));
+            result.AddRange(tradingOrders.CheckOrderClientId(tradingPositions));
 
             await _log.WriteInfoAsync("CheckOrdersReportAndOrderClosedOpened", null, $"Check finished with {result.Count} errors");
             return result;
@@ -190,10 +200,10 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
             var allTradingPosition = (await tradingPositionRepo.GetOpenedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService")
+                .Where(m => m.TakerCounterpartyId != Constants.HedgingServiceName)
                 .ToList();
             allTradingPosition.AddRange((await tradingPositionRepo.GetClosedAsync(from, to))
-                .Where(m => m.TakerCounterpartyId != "LykkeHedgingService"));
+                .Where(m => m.TakerCounterpartyId != Constants.HedgingServiceName));
                        
             
             var result = new List<PriceCandlesConsistencyResult>();
@@ -203,32 +213,42 @@ namespace Lykke.Job.MtConsistencyChecker.Services
                 return result;
             }
 
-            // Process Open Price candles 1 day per loop
-            var minOpenDate = allTradingPosition.Min(x => x.OpenDate).Value;
-            var maxOpenDate = allTradingPosition.Max(x => x.OpenDate).Value;
-            var currentOpenDay = minOpenDate.Date;
-            do
-            {
-                var dayEnd = currentOpenDay.AddDays(1).AddMilliseconds(-1);
-                var dayTradingPositions = allTradingPosition.Where(t => t.OpenDate >= currentOpenDay && t.OpenDate <= dayEnd);
-                var assets = dayTradingPositions.Select(x => x.CoreSymbol)
-                    .Distinct();
-                if (dayTradingPositions.Count() >= 1)
-                {
-                    var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
-                    var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
-                    foreach (var asset in assets)
-                    {
-                        var bcandles = await _priceCandlesService.GetMinuteCandle(asset, false, currentOpenDay, dayEnd);
-                        bidCandles.Add(asset, bcandles);
 
-                        var acandles = await _priceCandlesService.GetMinuteCandle(asset, true, currentOpenDay, dayEnd);
-                        askCandles.Add(asset, acandles);
+            // Process Open Price candles 1 day per loop
+            var minOpenDate = allTradingPosition.Min(x => x.OpenDate);
+            var maxOpenDate = allTradingPosition.Max(x => x.OpenDate);
+            if (minOpenDate != null && maxOpenDate != null)
+            {
+                var currentOpenDay = minOpenDate.Value.Date;
+                do
+                {
+                    var dayEnd = currentOpenDay.AddDays(1).AddMilliseconds(-1);
+                    var dayTradingPositions = allTradingPosition
+                        .Where(t => t.OpenDate >= currentOpenDay && t.OpenDate <= dayEnd)
+                        .ToList();
+                    var assets = dayTradingPositions.Select(x => x.CoreSymbol)
+                        .Distinct();
+                    if (dayTradingPositions.Any())
+                    {
+                        var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                        var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
+                        foreach (var asset in assets)
+                        {
+                            var bcandles =
+                                await _priceCandlesService.GetMinuteCandle(asset, false, currentOpenDay, dayEnd);
+                            bidCandles.Add(asset, bcandles);
+
+                            var acandles =
+                                await _priceCandlesService.GetMinuteCandle(asset, true, currentOpenDay, dayEnd);
+                            askCandles.Add(asset, acandles);
+                        }
+
+                        result.AddRange(dayTradingPositions.CheckOpenPriceCandlesConsistency(askCandles, bidCandles));
                     }
-                    result.AddRange(dayTradingPositions.CheckOpenPriceCandlesConsistency(askCandles, bidCandles));
-                }
-                currentOpenDay = currentOpenDay.AddDays(1);
-            } while (currentOpenDay <= maxOpenDate.Date);
+
+                    currentOpenDay = currentOpenDay.AddDays(1);
+                } while (currentOpenDay <= maxOpenDate.Value.Date);
+            }
 
             // Process Close Price candles 1 day per loop
             var lowerCloseDate = allTradingPosition.Min(x => x.CloseDate);
@@ -243,10 +263,11 @@ namespace Lykke.Job.MtConsistencyChecker.Services
                 {
                     var dayEnd = currentCloseDay.AddDays(1).AddMilliseconds(-1);
                     var dayTradingPositions = allTradingPosition
-                        .Where(t => t.CloseDate >= currentCloseDay && t.CloseDate <= dayEnd);
+                        .Where(t => t.CloseDate >= currentCloseDay && t.CloseDate <= dayEnd)
+                        .ToList();
                     var assets = dayTradingPositions.Select(x => x.CoreSymbol)
                         .Distinct();
-                    if (dayTradingPositions.Count() >= 1)
+                    if (dayTradingPositions.Any())
                     {
                         var bidCandles = new Dictionary<string, IEnumerable<ICandle>>();
                         var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
@@ -281,7 +302,8 @@ namespace Lykke.Job.MtConsistencyChecker.Services
             var accountTransactionRepo = _repositoryManager.GetAccountTransactionsReport(isSql);
             var tradingPositionRepo = _repositoryManager.GetTradingPosition(isSql);
 
-            var marginEvents = await marginEventsRepo.GetAsync(from, to);
+            var marginEvents = (await marginEventsRepo.GetAsync(from, to))
+                .ToList();
             var result = new List<MarginEventsAccountStatusCheckResult>();
 
             // balance equals the account balance calculated for the corresponding date base on transactions like in Check 1)

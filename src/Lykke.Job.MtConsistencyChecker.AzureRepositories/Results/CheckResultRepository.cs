@@ -1,4 +1,7 @@
-﻿using AzureStorage;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AzureStorage;
 using AzureStorage.Tables;
 using Common.Log;
 using Lykke.Job.MtConsistencyChecker.AzureRepositories.Entities;
@@ -6,12 +9,8 @@ using Lykke.Job.MtConsistencyChecker.Contract;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
 using Lykke.SettingsReader;
 using Microsoft.WindowsAzure.Storage.Table;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Lykke.Job.MtConsistencyChecker.AzureRepositories
+namespace Lykke.Job.MtConsistencyChecker.AzureRepositories.Results
 {
     public class CheckResultRepository : ICheckResultRepository
     {

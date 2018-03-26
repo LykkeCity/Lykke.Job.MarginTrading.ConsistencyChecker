@@ -1,10 +1,10 @@
-﻿using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Results;
-using Lykke.Job.MtConsistencyChecker.Core;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Lykke.Job.MtConsistencyChecker.Contract;
+using Lykke.Job.MtConsistencyChecker.Contract.Results;
+using Lykke.Job.MtConsistencyChecker.Core.Extensions;
 
-namespace Lykke.Job.MtConsistencyChecker.Services
+namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
 {
     internal static class OrdersReportAndOrderClosedOpenedExtensions
     {
@@ -18,13 +18,16 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckNumberOfOrders(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
         {
             var result = new List<OrdersReportAndOrderClosedOpenedCheckResult>();
+            var orders = tradingOrders.ToList();
             // for each TradePosition based on TakerPositionID (Closed Positions Table)
             foreach (var tradingPosition in tradingPositions.OrderBy(x => x.Date))
             {
                 // there should exist one and only one order for OpenDate and another for CloseDate (if closed)
-                var tradingPositionOrders = tradingOrders
-                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId);
-                if (tradingPosition.CloseDate != null && tradingPositionOrders.Count() != 2)
+                
+                var tradingPositionOrders = orders
+                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId)
+                    .ToList();
+                if (tradingPosition.CloseDate != null && tradingPositionOrders.Count != 2)
                 {
                     result.Add(new OrdersReportAndOrderClosedOpenedCheckResult
                     {
@@ -33,7 +36,7 @@ namespace Lykke.Job.MtConsistencyChecker.Services
                         Error = "Position should have 2 Order Reports (Open and Close)"
                     });
                 }
-                if (tradingPosition.CloseDate == null && tradingPositionOrders.Count() != 1)
+                if (tradingPosition.CloseDate == null && tradingPositionOrders.Count != 1)
                 {
                     result.Add(new OrdersReportAndOrderClosedOpenedCheckResult
                     {
@@ -77,11 +80,13 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrdersDate(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
         {
             var result = new List<OrdersReportAndOrderClosedOpenedCheckResult>();
+            var orders = tradingOrders.ToList();
             // for each TradePosition based on TakerPositionID
             foreach (var tradingPosition in tradingPositions.OrderBy(x => x.Date))
             {
-                var tradingPositionOrders = tradingOrders
-                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId);
+                var tradingPositionOrders = orders
+                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId)
+                    .ToList();
                 var openOrderReport = tradingPositionOrders.FirstOrDefault(x => x.TakerAction == "Open");
                 var closeOrderReport = tradingPosition.CloseDate != null ? tradingPositionOrders.FirstOrDefault(x => x.TakerAction == "Close") : null;
 
@@ -111,15 +116,16 @@ namespace Lykke.Job.MtConsistencyChecker.Services
         /// <param name="tradingOrders"></param>
         /// <param name="tradingPositions"></param>
         /// <returns></returns>
-        internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrderClientID(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
+        internal static IEnumerable<OrdersReportAndOrderClosedOpenedCheckResult> CheckOrderClientId(this IEnumerable<ITradingOrder> tradingOrders, IEnumerable<ITradingPosition> tradingPositions)
         {
             var result = new List<OrdersReportAndOrderClosedOpenedCheckResult>();
+            var orders = tradingOrders.ToList();
             // for each TradePosition based on TakerPositionID (Closed Positions Table)
             foreach (var tradingPosition in tradingPositions.OrderBy(x => x.Date))
-            {
-                var tradingPositionOrders = tradingOrders
-                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId);
-
+            {   
+                var tradingPositionOrders = orders
+                    .Where(t => t.TakerPositionId == tradingPosition.TakerPositionId)
+                    .ToList();
 
                 var noMatch = tradingPositionOrders.Where(m => m.TakerCounterpartyId != tradingPosition.TakerCounterpartyId)
                     .Select(x => new OrdersReportAndOrderClosedOpenedCheckResult

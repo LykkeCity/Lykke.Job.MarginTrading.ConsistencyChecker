@@ -1,16 +1,15 @@
-﻿using AzureStorage;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using AzureStorage;
 using AzureStorage.Tables;
 using Common.Log;
 using Lykke.Job.MtConsistencyChecker.AzureRepositories.Entities;
 using Lykke.Job.MtConsistencyChecker.Contract;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
 using Lykke.SettingsReader;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Lykke.Job.MtConsistencyChecker.AzureRepositories
+namespace Lykke.Job.MtConsistencyChecker.AzureRepositories.Results
 {
     public class OrdersReportAndOrderClosedOpenedRepository : IOrdersReportAndOrderClosedOpenedRepository
     {

@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Lykke.Job.MtConsistencyChecker.Contract;
+using System;
 
-namespace Lykke.Job.MtConsistencyChecker.Contract.Models
+namespace Lykke.Job.MtConsistencyChecker.SqlRepositories.Entities
 {
-    public class TradingOrder : ITradingOrder
+    internal class TradingOrderEntity : ITradingOrder
     {
         public string Id { get; set; }
         public DateTime Date { get; set; }
-
         public string TakerPositionId { get; set; }
         public string TakerOrderId { get; set; }
         public string TakerCounterpartyId { get; set; }

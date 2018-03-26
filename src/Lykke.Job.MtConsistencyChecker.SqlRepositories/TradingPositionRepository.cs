@@ -1,8 +1,7 @@
-﻿using Common.Log;
-using Dapper;
+﻿using Dapper;
 using Lykke.Job.MtConsistencyChecker.Contract;
-using Lykke.Job.MtConsistencyChecker.Contract.Models;
 using Lykke.Job.MtConsistencyChecker.Core.Repositories;
+using Lykke.Job.MtConsistencyChecker.SqlRepositories.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -17,14 +16,12 @@ namespace Lykke.Job.MtConsistencyChecker.SqlRepositories
         private const string ClosedTableName = "TradingPositionClosed";
 
         private readonly string _connectionString;
-        private readonly ILog _log;
 
-        private string GetColumns =>
+        private static string GetColumns =>
             string.Join(",", typeof(ITradingPosition).GetProperties().Select(x => x.Name));
 
-        public TradingPositionRepository(string connectionString, ILog log)
-        {
-            _log = log;
+        public TradingPositionRepository(string connectionString)
+        {   
             _connectionString = connectionString;
         }
 
@@ -40,14 +37,18 @@ namespace Lykke.Job.MtConsistencyChecker.SqlRepositories
 
         private async Task<IEnumerable<ITradingPosition>> GetDataAsync(bool openedTable, DateTime? dtFrom, DateTime? dtTo)
         {
-            string table = openedTable ? OpenedTableName : ClosedTableName;
-            var query = $"SELECT " + GetColumns +
+            var table = openedTable ? OpenedTableName : ClosedTableName;
+            var query = "SELECT " + GetColumns +
                        $" FROM {table}" +
-                       $" WHERE (Date >= @from AND Date <= @to)";
+                       " WHERE (Date >= @from AND Date <= @to)";
 
             using (var conn = new SqlConnection(_connectionString))
             {
-                return (await conn.QueryAsync<TradingPosition>(query, new { from = dtFrom ?? new DateTime(2000, 01, 01), to = dtTo ?? DateTime.MaxValue }))
+                return (await conn.QueryAsync<TradingPositionEntity>(query, new
+                    {
+                        from = dtFrom ?? new DateTime(2000, 01, 01),
+                        to = dtTo ?? DateTime.MaxValue
+                    }))
                     .OrderByDescending(x => x.Date);
             }
         }
