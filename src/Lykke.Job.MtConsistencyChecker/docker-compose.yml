@@ -1,0 +1,18 @@
+version: '2'
+services:
+  margintradingmarketmaker:
+    image: lykkedev/margintradingconsistencychecker
+    container_name: margintradingconsistencychecker
+    environment:
+      - SettingsUrl=${SettingsUrl}
+      - ENV_INFO=${Env}
+    ports:
+      - "5000:5000"
+    networks:
+      mynet:
+        aliases:
+          - margintradingconsistencychecker
+
+networks:
+  mynet:
+    driver: bridge
