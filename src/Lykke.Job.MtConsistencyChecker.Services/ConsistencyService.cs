@@ -234,13 +234,28 @@ namespace Lykke.Job.MtConsistencyChecker.Services
                         var askCandles = new Dictionary<string, IEnumerable<ICandle>>();
                         foreach (var asset in assets)
                         {
-                            var bcandles =
-                                await _priceCandlesService.GetMinuteCandle(asset, false, currentOpenDay, dayEnd);
-                            bidCandles.Add(asset, bcandles);
-
-                            var acandles =
+                            try
+                            {
+                                var bcandles =
+                                    await _priceCandlesService.GetMinuteCandle(asset, false, currentOpenDay, dayEnd);
+                                bidCandles.Add(asset, bcandles);
+                            }
+                            catch (Exception ex)
+                            {
+                                await _log.WriteWarningAsync("CheckCandlesPriceConsistency", null, ex.Message);
+                                bidCandles.Add(asset, new ICandle[0]);
+                            }
+                            try
+                            {
+                                var acandles =
                                 await _priceCandlesService.GetMinuteCandle(asset, true, currentOpenDay, dayEnd);
-                            askCandles.Add(asset, acandles);
+                                askCandles.Add(asset, acandles);
+                            }
+                            catch (Exception ex)
+                            {
+                                await _log.WriteWarningAsync("CheckCandlesPriceConsistency", null, ex.Message);
+                                askCandles.Add(asset, new ICandle[0]);
+                            }
                         }
 
                         result.AddRange(dayTradingPositions.CheckOpenPriceCandlesConsistency(askCandles, bidCandles));

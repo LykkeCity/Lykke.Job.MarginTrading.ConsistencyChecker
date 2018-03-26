@@ -109,7 +109,18 @@ namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
             foreach (var position in tradingPositionsClosed)
             {
                 var transaction = accountTransactionsReports
-                    .First(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                    .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+
+                if (transaction == null)
+                {
+                    result.Add(new BalanceAndOrderClosedCheckResult
+                    {
+                        TradingPosition = position,
+                        AccountTransaction = transaction,
+                        Error = "Position has no close transaction."
+                    });
+                    continue;
+                }
 
                 if (transaction.AccountId != position.TakerAccountId)
                     result.Add(new BalanceAndOrderClosedCheckResult
@@ -136,7 +147,18 @@ namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
             foreach (var position in tradingPositionsClosed)
             {
                 var transaction = accountTransactionsReports
-                    .First(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                    .FirstOrDefault(t => t.PositionId == position.TakerPositionId && t.Type == "OrderClosed");
+                if (transaction == null)
+                {
+                    result.Add(new BalanceAndOrderClosedCheckResult
+                    {
+                        TradingPosition = position,
+                        AccountTransaction = transaction,
+                        Error = "Position has no close transaction."
+                    });
+                    continue;
+                }
+
                 var dateDelta = transaction.Date - position.Date;
                 if (dateDelta.TotalMinutes < -1 || dateDelta.TotalMinutes > 1)
                     result.Add(new BalanceAndOrderClosedCheckResult

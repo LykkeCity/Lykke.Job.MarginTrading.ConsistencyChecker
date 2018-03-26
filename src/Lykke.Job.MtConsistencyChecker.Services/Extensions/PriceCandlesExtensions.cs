@@ -36,7 +36,17 @@ namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
                         tradingPosition.OpenDate.Value.Day, tradingPosition.OpenDate.Value.Hour,
                         tradingPosition.OpenDate.Value.Minute, 0);
                     var openCandle = candlesList[tradingPosition.CoreSymbol]
-                        .Single(c => c.DateTime == minute);
+                        .SingleOrDefault(c => c.DateTime == minute);
+                    if (openCandle == null)
+                    {
+                        result.Add(new PriceCandlesConsistencyResult
+                        {
+                            Position = tradingPosition,
+                            Candle = openCandle,
+                            Error = "No open price candle available for position."
+                        });
+                        continue;
+                    }
 
                     if (tradingPosition.OpenPrice > openCandle.High)
                         result.Add(new PriceCandlesConsistencyResult
@@ -70,7 +80,18 @@ namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
                         tradingPosition.CloseDate.Value.Month, tradingPosition.CloseDate.Value.Day,
                         tradingPosition.CloseDate.Value.Hour, tradingPosition.CloseDate.Value.Minute, 0);
                     var closeCandle = candlesList[tradingPosition.CoreSymbol]
-                        .Single(c => c.DateTime == minute);
+                        .SingleOrDefault(c => c.DateTime == minute);
+
+                    if (closeCandle == null)
+                    {
+                        result.Add(new PriceCandlesConsistencyResult
+                        {
+                            Position = tradingPosition,
+                            Candle = closeCandle,
+                            Error = "No close price candle available for position."
+                        });
+                        continue;
+                    }
 
                     if (tradingPosition.ClosePrice > closeCandle.High)
                         result.Add(new PriceCandlesConsistencyResult
