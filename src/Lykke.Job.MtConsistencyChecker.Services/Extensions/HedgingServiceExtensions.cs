@@ -50,6 +50,15 @@ namespace Lykke.Job.MtConsistencyChecker.Services.Extensions
                             .OrderByDescending(p => p.CloseDate)
                             .Take(2)
                             .ToArray();
+                        if (lastClosed.Length < 2)
+                        {
+                            result.Add(new HedgingServiceCheckResult
+                            {
+                                OpenPosition = accountIdCoreSymbolRecords.First(),
+                                Error = $"Hedging Service Closed Positions list must have at least 2 entries for comparison. AccountId_coreSymbol {accountId}_{coreSymbol}"
+                            });
+                            continue;
+                        }
                         var accountIdCoreSymbolClosedVolume = lastClosed[0].Volume - lastClosed[1].Volume;
                         if (Math.Abs(accountIdCoreSymbolVolume - accountIdCoreSymbolClosedVolume) > Double.Epsilon)
                         {
