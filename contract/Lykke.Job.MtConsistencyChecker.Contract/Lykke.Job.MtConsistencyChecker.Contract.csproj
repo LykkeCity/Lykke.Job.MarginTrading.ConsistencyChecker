@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/LykkeCity/Lykke.Job.MarginTrading.ConsistencyChecker.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Lykke;MarginTrading.ConsistencyChecker</PackageTags>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
